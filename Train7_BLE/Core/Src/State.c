@@ -10,11 +10,11 @@
 #include "Distance.h"
 #include "Dump.h"
 #include "LCD.h"
+#include "LINBLE.h"
 #include "Temp_ADC.h"
 #include "Temp_I2C.h"
 #include "UART.h"
 #include "mystringfunc.h"
-#include "LINBLE.h"
 
 void State_runViewTemp(void);
 void State_runViewDistance(void);
@@ -139,7 +139,7 @@ void State_runViewDistance(void) {
     LCD_ClearBuffer();
     LCD_WriteToBuffer(0, (uint8_t *)"DISTANCE", 8);
     LCD_WriteToBufferInt(8, l_DistanceADC, 3);
-    LCD_WriteToBuffer(11,(uint8_t *) "cm", 2);
+    LCD_WriteToBuffer(11, (uint8_t *)"cm", 2);
 }
 
 void State_runMemDump(void) {
@@ -184,7 +184,7 @@ void State_RunUARTRecieveInUART(void) {
         }
     } else {
         PrintUART((uint8_t *)"Input : ");
-        PrintUART(l_strBuf);
+        PrintUARTn(l_strBuf, 64);
         PrintUART((uint8_t *)"\r\n");
     }
 
@@ -249,7 +249,7 @@ void State_runDebugOutput(void) {
 #endif
 
     LCD_ClearBuffer();
-    LCD_WriteToBuffer(0,(uint8_t *) "DEBUG:", 5);
+    LCD_WriteToBuffer(0, (uint8_t *)"DEBUG:", 5);
 
 #ifdef MYDEBUG
 // シリアルに温度送信

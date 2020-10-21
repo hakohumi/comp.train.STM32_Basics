@@ -21,6 +21,8 @@ int8_t PrintUART(uint8_t *i_str);
 int8_t PrintUARTn(uint8_t *i_str, uint8_t i_size);
 int8_t PrintUARTInt(uint32_t i_var);
 
+void PrintChar(uint8_t i_char);
+
 // デバッグ用
 // 文字列と数字を表示
 bool dprintUART(uint8_t *i_str, uint32_t i_var);

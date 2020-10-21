@@ -183,7 +183,6 @@ uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
     return i;
 }
 
-
 // UARTに文字列を表示
 // NULL終端前提
 // チェック：
@@ -218,18 +217,42 @@ int8_t PrintUART(uint8_t *i_str) {
 }
 
 int8_t PrintUARTn(uint8_t *i_str, uint8_t i_size) {
+    uint8_t l_strBuf[i_size + 1];
+    uint8_t i = 0;
+
+    while (i < i_size) {
+        l_strBuf[i] = *i_str;
+        i_str++;
+        i++;
+    }
+    l_strBuf[i] = '\0';
+
     /* ----------------------- エラー処理 -------------------*/
     // 文字数、終端文字
     /* ---------------------------------------------------- */
 
     // 終端文字を見つけるまで かつ バッファ分まで
-    if (MyString_FindEOL(i_str, i_size) <= 0) {
-        i_str[i_size] = '\0';
+    if (MyString_FindEOL(&l_strBuf, i_size + 1) <= 0) {
+        l_strBuf[i_size] = '\0';
     }
 
     /* -------------------------------------*/
 
-    int status = HAL_UART_Transmit(this_huart, i_str, (uint16_t)(strlen((const char *)i_str)), 0xffff);
+    int status = HAL_UART_Transmit(this_huart, &l_strBuf, (uint16_t)(strlen((const char *)&l_strBuf)), 0xffff);
+    return status == HAL_OK;
+}
+
+void PrintChar(uint8_t i_char) {
+    int status;
+    uint8_t l_buf[2];
+
+    if (MyString_CheckCharCtrlCode(i_char) == true) {
+        l_buf[0] = i_char;
+        l_buf[1] = 0;
+        status   = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
+    } else {
+        status = HAL_UART_Transmit(this_huart, (uint8_t *)"  ", (uint16_t)2, 0xffff);
+    }
     return status == HAL_OK;
 }
 

@@ -542,9 +542,18 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     } else if (huart == &huart2) {
         // 受信したデータを格納
         UART_SetReceiveData();
+
+        switch (State_GetState()) {
+            case SYS_STATE_DEBUG_RECIEVE:
+                 PrintChar(UART_GetReceiveCharLast());
+                break;
+            default:
+                break;
+        }
+
 #ifdef MYDEBUG
-        PrintUART("huart2 Rx test, read data : ");
-        PrintUARTInt(UART_GetReceiveCharLast());
+            // PrintUART("huart2 Rx test, read data : ");
+            // PrintUARTInt(UART_GetReceiveCharLast());
 #endif
     }
 }
