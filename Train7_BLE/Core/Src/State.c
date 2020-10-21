@@ -8,12 +8,13 @@
 #include "State.h"
 
 #include "Distance.h"
+#include "Dump.h"
 #include "LCD.h"
 #include "Temp_ADC.h"
 #include "Temp_I2C.h"
 #include "UART.h"
 #include "mystringfunc.h"
-#include "Dump.h"
+#include "LINBLE.h"
 
 void State_runViewTemp(void);
 void State_runViewDistance(void);
@@ -28,7 +29,7 @@ static uint8_t SystemState;
 bool BLEreconnectFlg = true;
 
 // 処理の更新タイミング
-State_UpdateFlg = false;
+bool State_UpdateFlg = false;
 
 // 初期化
 void State_Init(uint8_t i_state) {
@@ -44,25 +45,25 @@ void State_ChangeStateRoll(void) {
 
     switch (SystemState) {
         case SYS_STATE_TEMP:
-            dprintUART("SYS State TEMP : ", SystemState);
+            dprintUART((uint8_t *)"SYS State TEMP : ", SystemState);
             break;
         case SYS_STATE_DISTANCE:
-            dprintUART("SYS State DISTANCE : ", SystemState);
+            dprintUART((uint8_t *)"SYS State DISTANCE : ", SystemState);
             break;
         case SYS_STATE_DEBUG_POINTER:
-            dprintUART("SYS State DEBUG POINTER : ", SystemState);
+            dprintUART((uint8_t *)"SYS State DEBUG POINTER : ", SystemState);
             break;
         case SYS_STATE_DEBUG_RECIEVE:
-            PrintUART("SYS State DEBUG RECIEVE\r\n");
+            PrintUART((uint8_t *)"SYS State DEBUG RECIEVE\r\n");
             break;
         case SYS_STATE_BLE:
-            PrintUART("SYS_STATE_BLE\r\n");
+            PrintUART((uint8_t *)"SYS_STATE_BLE\r\n");
             break;
         case SYS_STATE_DEBUG:
-            dprintUART("SYS State DEBUG : ", SystemState);
+            dprintUART((uint8_t *)"SYS State DEBUG : ", SystemState);
             break;
         default:
-            PrintUART("SYS State main未登録\r\n");
+            PrintUART((uint8_t *)"SYS State main未登録\r\n");
             break;
     }
 }
@@ -121,10 +122,10 @@ void State_runViewTemp(void) {
 
     // I2C 温度
     LCD_ClearBuffer();
-    LCD_WriteToBuffer(0, "I2C:", 4);
+    LCD_WriteToBuffer(0, (uint8_t *)"I2C:", 4);
     LCD_WriteToBufferInt(4, l_TempI2C, 2);
     // ADC 温度
-    LCD_WriteToBuffer(8, "ADC:", 4);
+    LCD_WriteToBuffer(8, (uint8_t *)"ADC:", 4);
     LCD_WriteToBufferInt(12, l_TempADC, 2);
 }
 
@@ -136,9 +137,9 @@ void State_runViewDistance(void) {
     l_DistanceADC = Distance_ADC_GetDistance();
 
     LCD_ClearBuffer();
-    LCD_WriteToBuffer(0, "DISTANCE", 8);
+    LCD_WriteToBuffer(0, (uint8_t *)"DISTANCE", 8);
     LCD_WriteToBufferInt(8, l_DistanceADC, 3);
-    LCD_WriteToBuffer(11, "cm", 2);
+    LCD_WriteToBuffer(11,(uint8_t *) "cm", 2);
 }
 
 void State_runMemDump(void) {
@@ -146,37 +147,16 @@ void State_runMemDump(void) {
     static uint8_t *l_p = 0x00000000;
 
     LCD_ClearBuffer();
-    LCD_WriteToBuffer(0, "DBG ADDR", 8);
+    LCD_WriteToBuffer(0, (uint8_t *)"DBG ADDR", 8);
     LCD_WriteToBufferInt(8, *l_p, 8);
-    printUARTHex("Pointer Address : ", l_p, 8);
-    printUARTHex("Pointer Value : ", (*l_p), 2);
+    printUARTHex((uint8_t *)"Pointer Address : ", (uint32_t)l_p, 8);
+    printUARTHex((uint8_t *)"Pointer Value : ", (*l_p), 2);
 
     l_p++;
 }
 void State_runUARTRecieve(void) {
     LCD_ClearBuffer();
-    LCD_WriteToBuffer(0, "RECIEVE", 7);
-
-    //				dprintUART("readDataNum : ", readDataNum());
-    //				dprintUART("InputBufIdx : ", InputBufIdx);
-
-    // UART 入力待ち
-    // if (UART_GetReceiveLineFlg() == true) {
-    // l_strLength = UART_GetReceiveData(&l_strBuf, 64);
-    // PrintUARTInt(l_strLength);
-    // if (l_strLength == 1) {
-    //     if (l_strBuf[0] == '\r' || l_strBuf[0] == '\n') {
-    //         // enterの文字と、受信した文字列を表示
-    //         PrintUART("enter\r\n");
-    //     }
-    // } else {
-    //     PrintUART("Input : ");
-    //     PrintUART(l_strBuf);
-    //     PrintUART("\r\n");
-    // }
-
-    // Dump_sendMemDumpUART(2, 1 * 1024);
-    // }
+    LCD_WriteToBuffer(0, (uint8_t *)"RECIEVE", 7);
 }
 
 // UARTのほうでリアルタイムで呼ばれる
@@ -200,12 +180,12 @@ void State_RunUARTRecieveInUART(void) {
     if (l_strLength == 1) {
         if (l_strBuf[0] == '\0') {
             // enterの文字と、受信した文字列を表示
-            PrintUART("enter\r\n");
+            PrintUART((uint8_t *)"enter\r\n");
         }
     } else {
-        PrintUART("Input : ");
+        PrintUART((uint8_t *)"Input : ");
         PrintUART(l_strBuf);
-        PrintUART("\r\n");
+        PrintUART((uint8_t *)"\r\n");
     }
 
     // 入力された文字がコマンド(アドレス)かどうか
@@ -234,7 +214,7 @@ void State_RunUARTRecieveInUART(void) {
             ls_FuncArgumentArray[0] = l_value;
         }
 
-        ls_EnterNum++;
+        ls_EnterNum = 1;
         // 2要素目（読み取るサイズ）
     } else if (ls_EnterNum == 1) {
         if (l_status == -1) {
@@ -269,7 +249,7 @@ void State_runDebugOutput(void) {
 #endif
 
     LCD_ClearBuffer();
-    LCD_WriteToBuffer(0, "DEBUG:", 5);
+    LCD_WriteToBuffer(0,(uint8_t *) "DEBUG:", 5);
 
 #ifdef MYDEBUG
 // シリアルに温度送信
@@ -315,7 +295,7 @@ void State_runDebugOutput(void) {
     //		printUART("ADC VREFINT Value :", ADC_GetRawValue(ADC_DATA_IDX_VREFINT));
 
     // デバッグ用
-    dprintUART("Timer :  tim21  overflow cnt : ", (uint16_t)l_count);
+    dprintUART((uint8_t *)"Timer :  tim21  overflow cnt : ", (uint16_t)l_count);
 
     l_count++;
 
@@ -333,7 +313,7 @@ void State_runBLE(void) {
 
     int8_t l_retMesg = 0;
     LCD_ClearBuffer();
-    LCD_WriteToBuffer(0, "BLE", 3);
+    LCD_WriteToBuffer(0, (uint8_t *)"BLE", 3);
 
     switch (l_LINBLEStatus) {
         case LINBLE_STATE_COMMAND:
@@ -343,7 +323,7 @@ void State_runBLE(void) {
             if (BLEreconnectFlg == true) {
                 l_retMesg = LINBLE_StartConnection();
                 if (l_retMesg != 0) {
-                    PrintUART("State_runBLE error\r\n");
+                    PrintUART((uint8_t *)"State_runBLE error\r\n");
                 } else {
                     // アドバタイズ状態へ遷移
                     l_LINBLEStatus = LINBLE_STATE_ADVERTISE;
@@ -352,14 +332,14 @@ void State_runBLE(void) {
             }
             break;
         case LINBLE_STATE_ADVERTISE:
-            PrintUART("アドバタイズ状態です。\r\n");
+            PrintUART((uint8_t *)"アドバタイズ状態です。\r\n");
             break;
 
         case LINBLE_STATE_ONLINE:
-            PrintUART("オンライン状態です。\r\n");
+            PrintUART((uint8_t *)"オンライン状態です。\r\n");
             break;
         default:
-            PrintUART("Error runBLE : switch default reached.\r\n");
+            PrintUART((uint8_t *)"Error runBLE : switch default reached.\r\n");
             break;
     }
 

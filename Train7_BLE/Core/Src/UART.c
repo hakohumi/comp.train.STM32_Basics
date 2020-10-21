@@ -171,7 +171,7 @@ uint8_t UART_GetReceiveCharLast(void) {
 }
 
 // バッファに入っているデータを取得する
-uint8_t *UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
+uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
     uint8_t i = 0;
 
     while (i <= UART_ReceiveCountLast && i < i_bufSize) {
@@ -183,125 +183,6 @@ uint8_t *UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
     return i;
 }
 
-// 入力受付処理
-// いずれはこれを、UARTからエンターが押された時に1行リードする関数としたい
-void UART_RecieveInput(void) {
-    // UART入力用バッファ
-    static uint8_t InputBufArray[INPUT_BUF_SIZE];
-    // UART入力バッファ用インデックス
-    static uint8_t InputBufIdx = 0;
-
-    /* ----------- シリアルの処理 ------------ */
-
-    // 値が確定（エンターが押された、バッファを超えた）した時に、フラグが立つ
-    // 立っていると、処理の最後にインデックスを0に戻す
-    // 立っていない時は、処理の最後にインデックスをカウントアップする
-    // 1文字表示用バッファ
-    uint8_t l_UART_StrBufChar[2];
-
-    bool l_UART_BeginIdx      = false;
-    static uint8_t l_UART_Len = 0;
-    // 引数1つ目と2つ目の値を格納する配列
-    static uint32_t l_UART_ArgumentArray[2] = {0, 0};
-
-    if (UART_ReceiveFlg == true) {
-        UART_ReceiveFlg == false;
-        // InputBufArray[InputBufIdx] = msgrx_circ_buf_get();
-
-        // 入力した文字をシリアルに送信
-        l_UART_StrBufChar[0] = InputBufArray[InputBufIdx];
-        l_UART_StrBufChar[1] = '\0';
-        PrintUARTn(l_UART_StrBufChar, 2);
-
-        // バッファ分まで入力が溜まった時
-        if (InputBufIdx > INPUT_BUF_SIZE - 1) {
-            InputBufArray[InputBufIdx] = '\0';
-            PrintUARTn(InputBufArray, 2);
-            PrintUART("\r\n");
-            l_UART_BeginIdx = true;
-        }
-
-        // エンターを押された時
-        if (InputBufArray[InputBufIdx] == '\r' || InputBufArray[InputBufIdx] == '\n') {
-            InputBufArray[InputBufIdx] = '\0';
-
-#ifdef MYDEBUG
-            dprintUART("l_UART_LEN: ", l_UART_Len);
-#endif
-
-            PrintUART("Input : ");
-            if (InputBufIdx == 0) {
-                // enterの文字と、受信した文字列を表示
-                PrintUART("enter\r\n");
-            } else {
-                PrintUART(InputBufArray);
-                PrintUART("\r\n");
-            }
-
-
-            // 入力された文字がコマンド(アドレス)かどうか
-            // 文字数チェック
-            if (InputBufIdx > 8) {
-                PrintERROR(ERROR_INPUT_OVERLENGTH);
-
-                goto INPUT_ERROR;
-            } else if (InputBufIdx == 0) {
-                // もし1文字目でエンターを押した場合
-                // 改行を表示するだけ
-                PrintERROR(ERROR_INPUT_SHORTLENGTH);
-
-                goto INPUT_ERROR;
-            }
-
-            uint32_t l_value = 0;
-            int8_t l_status  = MyString_Atoi(&l_value, InputBufArray, InputBufIdx);
-            dprintUART("MyString_Atoi : ", l_value);
-
-            /*   ここまでで、1回分の文字列を数値に変換は完了 */
-            /* ここまで実装 */
-
-            // 1要素目（開始アドレスの指定）
-            if (l_UART_Len == 0) {
-                if (l_status == -1) {
-                    goto INPUT_ERROR;
-                } else {
-                    l_UART_ArgumentArray[l_UART_Len] = l_value;
-                }
-
-                l_UART_BeginIdx = true;
-                l_UART_Len++;
-                // 2要素目（読み取るサイズ）
-            } else if (l_UART_Len == 1) {
-                if (l_status == -1) {
-                    goto INPUT_ERROR;
-                } else {
-                    l_UART_ArgumentArray[l_UART_Len] = l_value;
-                }
-
-                Dump_sendMemDumpUART((uint8_t *)l_UART_ArgumentArray[0],
-                    l_UART_ArgumentArray[1]);
-
-            // gotoラベル 例外処理
-            INPUT_ERROR:
-
-                l_UART_BeginIdx         = true;
-                l_UART_ArgumentArray[0] = 0;
-
-                l_UART_Len              = 0;
-                l_UART_ArgumentArray[1] = 0;
-            }
-        }  // エンター押された時の処理 終了括弧
-
-        // 入力された値が確定しているか
-        // していたらインデックスの初期化
-        if (l_UART_BeginIdx == true) {
-            l_UART_BeginIdx = false;
-            InputBufIdx     = 0;
-        } else {
-            InputBufIdx++;
-        }
-    }
-}
 
 // UARTに文字列を表示
 // NULL終端前提
@@ -323,8 +204,6 @@ int8_t PrintUART(uint8_t *i_str) {
 
     /* -------------------------------------*/
 
-    //	int status = HAL_UART_Transmit_DMA(huart_cobs, i_str,
-    //			(uint16_t) (strlen((const char*) i_str)));
     int status = HAL_UART_Transmit(this_huart, i_str, (uint16_t)(strlen((const char *)i_str)), 0xffff);
     //    int status = HAL_UART_Transmit_IT(huart_cobs, i_str, (uint16_t)(strlen((const char *)i_str)));
     return status == HAL_OK;
@@ -372,8 +251,6 @@ bool dprintUART(uint8_t *i_str, uint32_t i_var) {
 
     sprintf((char *)&l_buffer2, "%s, buf size : %d\r\n", (char *)&l_buffer, strlen((const char *)&l_buffer));
 
-    //	int status = HAL_UART_Transmit_DMA(huart_cobs, l_buffer2,
-    //			(uint16_t) (strlen((const char*) &l_buffer2)));
     int status = HAL_UART_Transmit(this_huart, l_buffer2, (uint16_t)(strlen((const char *)&l_buffer2)), 0xffff);
     return status == HAL_OK;
 }
@@ -393,8 +270,6 @@ bool printUARTHex(uint8_t *i_str, uint32_t i_var, uint8_t i_len) {
         sprintf((char *)&l_buffer, "%s0x%x\r\n", i_str, i_var);
     }
 
-    //	int status = HAL_UART_Transmit_DMA(huart_cobs, l_buffer,
-    //			(uint16_t) strlen((const char*) &l_buffer));
     int status = HAL_UART_Transmit(this_huart, l_buffer, (uint16_t)strlen((const char *)&l_buffer), 0xffff);
     return status == HAL_OK;
 }

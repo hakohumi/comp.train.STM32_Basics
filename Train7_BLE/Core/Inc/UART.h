@@ -33,7 +33,7 @@ void UART_ClrReceiveLineFlg(void);
 
 void PrintERROR(uint8_t i_errorCode);
 
-uint8_t *UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize);
+uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize);
 
 typedef enum {
     ERROR_UART_PRINTUART_ENDOFLINE,
