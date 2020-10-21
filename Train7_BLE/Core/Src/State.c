@@ -12,6 +12,8 @@
 #include "Temp_ADC.h"
 #include "Temp_I2C.h"
 #include "UART.h"
+#include "mystringfunc.h"
+#include "Dump.h"
 
 void State_runViewTemp(void);
 void State_runViewDistance(void);
@@ -24,6 +26,9 @@ void State_runBLE(void);
 // システムの状態
 static uint8_t SystemState;
 bool BLEreconnectFlg = true;
+
+// 処理の更新タイミング
+State_UpdateFlg = false;
 
 // 初期化
 void State_Init(uint8_t i_state) {
@@ -63,33 +68,40 @@ void State_ChangeStateRoll(void) {
 }
 
 void State_RunProcess(void) {
-    /* LCD に書き込み */
-    switch (State_GetState()) {
-        case SYS_STATE_TEMP:
-            State_runViewTemp();
-            break;
-        case SYS_STATE_DISTANCE:
-            State_runViewDistance();
-            break;
-            // メモリダンプ
-        case SYS_STATE_DEBUG_POINTER:
-            State_runMemDump();
-            break;
-            // シリアル送受信
-        case SYS_STATE_DEBUG_RECIEVE:
-            State_runUARTRecieve();
-            BLEreconnectFlg = true;
+    // 指定したタイマごとに処理をする
+    if (State_UpdateFlg == true) {
+        State_UpdateFlg = false;
 
-            break;
+        /* LCD に書き込み */
+        switch (State_GetState()) {
+            case SYS_STATE_TEMP:
 
-        case SYS_STATE_BLE:
-            State_runBLE();
-            break;
-        case SYS_STATE_DEBUG:
-            State_runDebugOutput();
-            break;
-        default:
-            break;
+                State_runViewTemp();
+
+                break;
+            case SYS_STATE_DISTANCE:
+                State_runViewDistance();
+                break;
+                // メモリダンプ
+            case SYS_STATE_DEBUG_POINTER:
+                State_runMemDump();
+                break;
+                // シリアル送受信
+            case SYS_STATE_DEBUG_RECIEVE:
+                State_runUARTRecieve();
+                BLEreconnectFlg = true;
+
+                break;
+
+            case SYS_STATE_BLE:
+                State_runBLE();
+                break;
+            case SYS_STATE_DEBUG:
+                State_runDebugOutput();
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -147,7 +159,98 @@ void State_runUARTRecieve(void) {
 
     //				dprintUART("readDataNum : ", readDataNum());
     //				dprintUART("InputBufIdx : ", InputBufIdx);
+
+    // UART 入力待ち
+    // if (UART_GetReceiveLineFlg() == true) {
+    // l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+    // PrintUARTInt(l_strLength);
+    // if (l_strLength == 1) {
+    //     if (l_strBuf[0] == '\r' || l_strBuf[0] == '\n') {
+    //         // enterの文字と、受信した文字列を表示
+    //         PrintUART("enter\r\n");
+    //     }
+    // } else {
+    //     PrintUART("Input : ");
+    //     PrintUART(l_strBuf);
+    //     PrintUART("\r\n");
+    // }
+
     // Dump_sendMemDumpUART(2, 1 * 1024);
+    // }
+}
+
+// UARTのほうでリアルタイムで呼ばれる
+void State_RunUARTRecieveInUART(void) {
+    // 文字列バッファ
+    uint8_t l_strBuf[64];
+    // 文字列の長さ
+    uint8_t l_strLength = 0;
+    // 整数型の入力値
+    uint32_t l_value = 0;
+    // 文字列を16進数に変換した時の返り値
+    int8_t l_status;
+    // エンター何回目か
+    static uint8_t ls_EnterNum = 0;
+    // 引数1つ目と2つ目の値を格納する配列
+    static uint32_t ls_FuncArgumentArray[2] = {0, 0};
+
+    l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+    PrintUARTInt(l_strLength);
+
+    if (l_strLength == 1) {
+        if (l_strBuf[0] == '\0') {
+            // enterの文字と、受信した文字列を表示
+            PrintUART("enter\r\n");
+        }
+    } else {
+        PrintUART("Input : ");
+        PrintUART(l_strBuf);
+        PrintUART("\r\n");
+    }
+
+    // 入力された文字がコマンド(アドレス)かどうか
+    // 文字数チェック
+    if (l_strLength > 9) {
+        PrintERROR(ERROR_INPUT_OVERLENGTH);
+
+        goto INPUT_ERROR;
+    } else if (l_strLength == 1) {
+        // もし1文字目でエンターを押した場合
+        // 改行を表示するだけ
+        PrintERROR(ERROR_INPUT_SHORTLENGTH);
+
+        goto INPUT_ERROR;
+    }
+
+    // 文字列を16進数に変換
+    l_status = MyString_Atoi(&l_value, l_strBuf, l_strLength);
+    dprintUART("MyString_Atoi : ", l_value);
+
+    // 1要素目（開始アドレスの指定）
+    if (ls_EnterNum == 0) {
+        if (l_status == -1) {
+            goto INPUT_ERROR;
+        } else {
+            ls_FuncArgumentArray[0] = l_value;
+        }
+
+        ls_EnterNum++;
+        // 2要素目（読み取るサイズ）
+    } else if (ls_EnterNum == 1) {
+        if (l_status == -1) {
+            goto INPUT_ERROR;
+        } else {
+            ls_FuncArgumentArray[1] = l_value;
+        }
+
+        Dump_sendMemDumpUART((uint8_t *)ls_FuncArgumentArray[0],
+            ls_FuncArgumentArray[1]);
+
+    INPUT_ERROR:
+        ls_EnterNum             = 0;
+        ls_FuncArgumentArray[0] = 0;
+        ls_FuncArgumentArray[1] = 0;
+    }
 }
 
 void State_runDebugOutput(void) {
@@ -228,7 +331,6 @@ typedef enum {
 void State_runBLE(void) {
     static int8_t l_LINBLEStatus = LINBLE_STATE_COMMAND;
 
-
     int8_t l_retMesg = 0;
     LCD_ClearBuffer();
     LCD_WriteToBuffer(0, "BLE", 3);
@@ -266,4 +368,8 @@ void State_runBLE(void) {
 
 uint8_t State_GetState(void) {
     return SystemState;
+}
+
+void State_SetUpdateFlg(void) {
+    State_UpdateFlg = true;
 }

@@ -13,7 +13,7 @@
 #include "main.h"
 
 void UART_Console_Init(UART_HandleTypeDef *huart);
-void UART_SetReceiveData(uint8_t i_data);
+void UART_SetReceiveData(void);
 
 void UART_ReceiveCountUp(void);
 
@@ -26,9 +26,14 @@ int8_t PrintUARTInt(uint32_t i_var);
 bool dprintUART(uint8_t *i_str, uint32_t i_var);
 bool printUARTHex(uint8_t *i_str, uint32_t i_var, uint8_t i_len);
 
-void UART_ReceiveInput(void);
+uint8_t UART_ReceiveInput(uint8_t i_state);
+
+uint8_t UART_GetReceiveLineFlg(void);
+void UART_ClrReceiveLineFlg(void);
 
 void PrintERROR(uint8_t i_errorCode);
+
+uint8_t *UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize);
 
 typedef enum {
     ERROR_UART_PRINTUART_ENDOFLINE,
@@ -43,5 +48,11 @@ typedef enum {
     ERROR_LINBLE_RECIEVEFAILURE,     // 受信準備失敗
     ERROR_MYSTRINGFUNC_NOTFIND_ENDOFLINE,
 } ERROR_CODE_Type;
+
+typedef enum {
+    UART_STATE_NONPUSHED,
+    UART_STATE_PUSHED_ENTER,
+    UART_STATE_LENGTH
+} UART_STATE_Type;
 
 #endif /* INC_UART_H_ */

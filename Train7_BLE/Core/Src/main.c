@@ -81,9 +81,6 @@ UART_HandleTypeDef huart2;
 // ADC DMAバッファ
 uint16_t G_ADCBuffer[ADC_BUFFER_LENGTH];
 
-//タイマオーバーフローフラグ
-bool TimerOverIntFlg = false;
-
 // デバッグ
 // メモリダンプ アスキー 確認用
 uint8_t str_test[] = "Mem Dump test";
@@ -109,7 +106,6 @@ uint16_t ADC_GetRawValue(uint8_t i_idx);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static uint8_t l_recieveBuf;
 /* USER CODE END 0 */
 
 /**
@@ -222,15 +218,11 @@ int main(void) {
 
         /* ---------------------------------------------------------  */
 
-        // 指定したタイマごとに処理をする
-        if (TimerOverIntFlg == true) {
-            TimerOverIntFlg = false;
+        // 状態に応じた処理の実行
+        State_RunProcess();
 
-            State_RunProcess();
-        }
-
-        // UARTの入力受付
-//        UART_RecieveInput();
+        // UART 受信処理
+        UART_ReceiveInput(State_GetState());
 
         // LCD更新
         LCD_BufferToLCD();
@@ -548,11 +540,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
         PrintUART("huart1 Rx test\r\n");
 
     } else if (huart == &huart2) {
-        PrintUART("huart2 Rx test, read data : ");
-        PrintUARTInt(l_recieveBuf);
         // 受信したデータを格納
-        UART_SetReceiveData(l_recieveBuf);
-        HAL_UART_Receive_IT(&huart2, &l_recieveBuf, 1);
+        UART_SetReceiveData();
+#ifdef MYDEBUG
+        PrintUART("huart2 Rx test, read data : ");
+        PrintUARTInt(UART_GetReceiveCharLast());
+#endif
     }
 }
 
@@ -576,7 +569,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     // タイマ21の割込み処理
     if (htim == &htim21) {
-        TimerOverIntFlg = true;
+        State_SetUpdateFlg();
     }
 }
 
