@@ -1,0 +1,82 @@
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+# excel用
+~$*
+
+# maplab x ide用
+
+
+whack-a-mole.X/*
+!whack-a-mole.X/Makefile
+!whack-a-mole.X/MyConfig.mc3
+!whack-a-mole.X/nbproject
+whack-a-mole.X/nbproject/*
+!whack-a-mole.X/nbproject/configurations.xml
+!whack-a-mole.X/nbproject/project.xml
+!whack-a-mole.X/main.c
+!whack-a-mole.X/mcc_generated_files
+!whack-a-mole.X/src
+!whack-a-mole.X/header
+
+# STM32用
+
+Debug/
+/Release/
+.settings/
+*.mxproject
+*.launch
+# !.ioc
+# !.project
+# !.cproject
+/.metadata/
