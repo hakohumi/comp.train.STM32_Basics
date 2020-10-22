@@ -285,6 +285,9 @@ void State_runRealtimeBLEInput(void) {
                     } else {
                         PrintUART("not receive messege \"ACKN\"\r\n");
                     }
+
+                    // バッファカウンタのクリア
+                    LINBLE_BufferCountClear();
                     // 受信待機フラグをクリアする
                     LINBLE_ClrReceiveWaitFlg();
                     // エンドラインフラグをクリア

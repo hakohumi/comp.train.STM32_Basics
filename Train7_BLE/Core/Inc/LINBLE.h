@@ -27,7 +27,7 @@ void LINBLE_ClrReceiveWaitFlg(void);
 bool LINBLE_GetEndLineFlg(void);
 bool LINBLE_CleEndLineFlg(void);
 
-
+void LINBLE_BufferCountClear(void);
 
 void LINBLE_EnterHandler(uint8_t i_sysState);
 

@@ -361,7 +361,8 @@ uint8_t PrintChar(uint8_t i_char) {
         l_buf[1] = 0;
         status   = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
     } else {
-        status = HAL_UART_Transmit(this_huart, (uint8_t *)"  ", (uint16_t)2, 0xffff);
+        // status = HAL_UART_Transmit(this_huart, (uint8_t *)" ", (uint16_t)1, 0xffff);
+        status = 0;
     }
     return status == HAL_OK;
 }

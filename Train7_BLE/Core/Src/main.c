@@ -560,6 +560,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
         switch (State_GetState()) {
             case SYS_STATE_DEBUG_RECIEVE:
+            case SYS_STATE_BLE:
                 PrintChar(UART_GetReceiveCharLast());
                 break;
             default:

@@ -108,10 +108,13 @@ uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
         o_strAddr++;
     }
 
-    // バッファカウントをクリア
-    LINBLE_ReceiveCount = 0;
-
     return i;
+}
+
+// バッファカウントをクリア
+// バッファをリードした後、バッファのカウンタを最初にしたいときに使用する
+void LINBLE_BufferCountClear(void) {
+    LINBLE_ReceiveCount = 0;
 }
 
 uint8_t LINBLE_GetState(void) {
