@@ -203,6 +203,12 @@ uint8_t UART_GetReceiveCharLast(void) {
 uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
     uint8_t i = 0;
 
+    // バッファサイズより大きい場合の例外
+    if (UART_ReceiveCountLast > i_bufSize) {
+        PrintUART("error uart getreceivedata \r\n");
+        return 0;
+    }
+
     while (i <= UART_ReceiveCountLast && i < i_bufSize) {
         *o_strAddr = UART_ReceiveData1[i];
         i++;

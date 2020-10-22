@@ -17,12 +17,6 @@
 #define BUF_STR_SIZE 64
 #define LINBLE_RECEIVE_BUF 64
 
-typedef enum {
-    LINBLE_STATE_COMMAND,
-    LINBLE_STATE_ADVERTISE,
-    LINBLE_STATE_ONLINE,
-} LINBLE_State_Type;
-
 static int8_t LINBLEStatus = LINBLE_STATE_COMMAND;
 
 // 受信バッファ
@@ -38,8 +32,6 @@ static uint8_t LINBLE_ReceiveCountLast;
 static UART_HandleTypeDef *this_huart;
 
 static uint8_t recieveBuf;
-
-int8_t LINBLE_sendCmd(uint8_t *i_cmd, uint8_t i_cmdLen, uint8_t *o_strbuf);
 
 // 初期化
 
@@ -88,6 +80,12 @@ uint8_t LINBLE_GetReceiveCharLast(void) {
 uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
     uint8_t i = 0;
 
+    // バッファサイズより大きい場合の例外
+    if (LINBLE_ReceiveCountLast > i_bufSize) {
+        PrintUART("error linble getreceivedata \r\n");
+        return 0;
+    }
+
     while (i <= LINBLE_ReceiveCountLast && i < i_bufSize) {
         *o_strAddr = LINBLE_ReceiveData1[i];
         i++;
@@ -97,9 +95,26 @@ uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
     return i;
 }
 
-// エンターが押された時の処理
-void LINBLE_Wait(void) {
-    // アドバタイズ状態から接続に成功すると、"CONN<CR><LF>"が返ってくる。
+uint8_t LINBLE_GetState(void) {
+    return LINBLEStatus;
+}
+
+uint8_t LINBLE_SetState(uint8_t i_state) {
+    switch (i_state) {
+        case LINBLE_STATE_COMMAND:
+            LINBLEStatus = i_state;
+            break;
+        case LINBLE_STATE_ADVERTISE:
+            LINBLEStatus = i_state;
+            break;
+        case LINBLE_STATE_ONLINE:
+            LINBLEStatus = i_state;
+            break;
+        default:
+            PrintUART("error linble setstate\r\n");
+            LINBLEStatus = 0xFF;
+            break;
+    }
 }
 
 void LINBLE_EnterHandler(uint8_t i_sysState) {

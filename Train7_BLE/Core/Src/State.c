@@ -9,6 +9,7 @@
 
 #include "Distance.h"
 #include "LCD.h"
+#include "LINBLE.h"
 #include "Temp_ADC.h"
 #include "Temp_I2C.h"
 #include "UART.h"
@@ -251,11 +252,36 @@ void State_runBLE(void) {
 }
 
 void State_runRealtimeBLEInput(void) {
+    uint8_t l_strBuf[64];
+    uint8_t l_strLength;
     // LINBLEの状態を更新したい
     // リンブル（UART1）から受信があった時、
     // バッファを取りためて、
     // 現在のLINBLEの状態と、受信した文字とを考慮して、
     // 現在のLIBNLEの状態を更新する
+
+    // 今の状態だと、ずっとLINBLEのバッファからリードすることになる
+
+    switch (LINBLE_GetState()) {
+        case LINBLE_STATE_COMMAND:
+            // コマンド状態中にBTAを入力されると、アドバタイズ状態へ遷移する
+            // アドバタイズ状態へ遷移したことがわかるには、ACKN<CR><LF>
+            l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+            if (l_strLength > 0) {
+                if (strcmp(&l_strBuf, "ACKN\r\n") == 0) {
+                    PrintUART("read ackn\r\n");
+                    LINBLE_SetState(LINBLE_STATE_ADVERTISE);
+                }
+            }
+            break;
+        case LINBLE_STATE_ADVERTISE:
+            break;
+        case LINBLE_STATE_ONLINE:
+            break;
+        default:
+            PrintUART("error unrealtime Ble input \r\n");
+            break;
+    }
 }
 
 uint8_t State_GetState(void) {
