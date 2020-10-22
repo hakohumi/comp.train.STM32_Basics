@@ -261,20 +261,43 @@ void State_runRealtimeBLEInput(void) {
     // 現在のLIBNLEの状態を更新する
 
     // 今の状態だと、ずっとLINBLEのバッファからリードすることになる
+    // 受信待機フラグで1回だけ通るようにする
+    // エンター押して送信したら、受信を待つようにする
+
+    // 受信待機フラグが立っている間、受信データが揃う前からリードを試みている
+    // 改善策：リザルトメッセージの最後を確認したらフラグを立て、そのフラグが立っている時のみ、メッセージの比較を行う
+    // エンドラインフラグ
 
     switch (LINBLE_GetState()) {
         case LINBLE_STATE_COMMAND:
-            // コマンド状態中にBTAを入力されると、アドバタイズ状態へ遷移する
-            // アドバタイズ状態へ遷移したことがわかるには、ACKN<CR><LF>
-            l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
-            if (l_strLength > 0) {
-                if (strcmp(&l_strBuf, "ACKN\r\n") == 0) {
-                    PrintUART("read ackn\r\n");
-                    LINBLE_SetState(LINBLE_STATE_ADVERTISE);
+            // リザルトメッセージ待機フラグが立っていたときのみ実行
+            if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
+                // コマンド状態中にBTAを入力されると、アドバタイズ状態へ遷移する
+                // アドバタイズ状態へ遷移したことがわかるには、ACKN<CR><LF>
+                l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+                if (l_strLength > 0) {
+                    if (strcmp(&l_strBuf, "ACKN\r\n") == 0) {
+                        PrintUART("read ackn\r\n");
+                        LINBLE_SetState(LINBLE_STATE_ADVERTISE);
+                        // 受信待機フラグをクリアする
+                        LINBLE_ClrReceiveWaitFlg();
+
+                    } else {
+                        PrintUART("not receive messege \"ACKN\"\r\n");
+                    }
+                    // エンドラインフラグをクリア
+                    LINBLE_ClrEndLineFlg();
+
+                } else {
+                    PrintUART("error linble run realtime ble input state command \r\n");
                 }
+
+            } else {
+                // 何もしない
             }
             break;
         case LINBLE_STATE_ADVERTISE:
+
             break;
         case LINBLE_STATE_ONLINE:
             break;

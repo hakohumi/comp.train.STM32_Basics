@@ -33,6 +33,12 @@ static UART_HandleTypeDef *this_huart;
 
 static uint8_t recieveBuf;
 
+// エンドラインフラグ
+static bool LINBLE_EndLineFlg = false;
+
+// 受信待機フラグ
+static bool LINBLE_ReceiveResultMesgWaitFlg = false;
+
 // 初期化
 
 void LINBLE_Init(UART_HandleTypeDef *huart) {
@@ -51,6 +57,10 @@ void LINBLE_Init(UART_HandleTypeDef *huart) {
 void LINBLE_SetReceiveData(void) {
     uint8_t i_data = recieveBuf;
 
+    if (i_data == '\n') {
+        LINBLE_EndLineFlg = true;
+    }
+
     // 受信したデータを格納
     LINBLE_ReceiveData1[LINBLE_ReceiveCount] = i_data;
 
@@ -61,9 +71,9 @@ void LINBLE_SetReceiveData(void) {
     LINBLE_ReceiveCount++;
 
     // 入力がバッファを超えたら、
-    if (LINBLE_ReceiveCount >= LINBLE_RECEIVE_BUF) {
+    if (LINBLE_ReceiveCount >= LINBLE_RECEIVE_BUF - 1) {
         // 最後に終端文字を入れる
-        LINBLE_ReceiveData1[LINBLE_RECEIVE_BUF] = '\0';
+        LINBLE_ReceiveData1[LINBLE_RECEIVE_BUF - 1] = '\0';
 
         // バッファを最初からにする
         LINBLE_ReceiveCount = 0;
@@ -74,6 +84,12 @@ void LINBLE_SetReceiveData(void) {
 
 uint8_t LINBLE_GetReceiveCharLast(void) {
     return recieveBuf;
+}
+bool LINBLE_GetEndLineFlg(void) {
+    return LINBLE_EndLineFlg;
+}
+void LINBLE_ClrEndLineFlg(void) {
+    LINBLE_EndLineFlg = false;
 }
 
 // バッファに入っているデータを取得する
@@ -136,6 +152,8 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                             case '1':
                                 PrintUART("pushed 1, Start connection.\r\n");
                                 LINBLE_StartConnection();
+                                // 受信待機フラグ
+                                LINBLE_ReceiveResultMesgWaitFlg = true;
 
                                 break;
                             default:
@@ -143,7 +161,6 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                         }
                     }
 
-                    // LINBLE_SendCommandToLINBLE(&l_strBuf, l_strLength);
                     break;
 
                 case LINBLE_STATE_ADVERTISE:
@@ -164,6 +181,14 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
             // 何もしない
             break;
     }
+}
+
+bool LINBLE_GetReceiveResultMesgWaitFlg(void) {
+    return LINBLE_ReceiveResultMesgWaitFlg;
+}
+
+void LINBLE_ClrReceiveWaitFlg(void) {
+    LINBLE_ReceiveResultMesgWaitFlg = false;
 }
 
 // ペリフェラルのLINBLEをアドバタイズ状態へ遷移させ、セントラルに接続させる
@@ -205,6 +230,11 @@ int8_t LINBLE_ShowDeviceName(void) {
 int8_t LINBLE_SendCommandToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize) {
     uint8_t l_ret[BUF_STR_SIZE];
     int8_t l_errorState = -1;
+
+    if (LINBLE_ReceiveResultMesgWaitFlg == true) {
+        PrintUART("The result message has not come back yet\r\n");
+        return -1;
+    }
 
     l_errorState = HAL_UART_Transmit_IT(this_huart, i_cmd, i_cmdSize);
 

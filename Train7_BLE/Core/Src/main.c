@@ -151,7 +151,7 @@ int main(void) {
     /* USER CODE BEGIN 2 */
 
     // システム状態の初期化
-    State_Init(SYS_STATE_DEBUG_RECIEVE);
+    State_Init(SYS_STATE_BLE);
 
     // LINBLEの初期化
     LINBLE_Init(&huart1);
@@ -223,7 +223,6 @@ int main(void) {
 
         // リアルタイムで実行される処理
         State_RunRealtimeProcess();
-
 
         // LCD更新
         LCD_BufferToLCD();
@@ -547,6 +546,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
             case SYS_STATE_BLE:
                 if (LINBLE_GetReceiveCharLast() == '\n') {
                     LINBLE_GetReceiveData(&l_strBuf, 64);
+                    PrintUART("uart1 Rx interrupt : ");
                     PrintUART(l_strBuf);
                 }
                 break;

@@ -82,12 +82,12 @@ void UART_SetReceiveData(void) {
         UART_ReceiveCount++;
 
         // 入力がバッファを超えたら、
-        if (UART_ReceiveCount >= UART_RECEIVE_BUF) {
+        if (UART_ReceiveCount >= UART_RECEIVE_BUF - 1) {
             // バッファオーバーフラグを立てる
             UART_ReceiveCountOverFlowFlg = true;
 
             // 最後に終端文字を入れる
-            UART_ReceiveData1[UART_RECEIVE_BUF] = '\0';
+            UART_ReceiveData1[UART_RECEIVE_BUF - 1] = '\0';
 
             // バッファを最初からにする
             UART_ReceiveCount = 0;
