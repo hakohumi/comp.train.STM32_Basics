@@ -268,6 +268,8 @@ void State_runRealtimeBLEInput(void) {
     // 改善策：リザルトメッセージの最後を確認したらフラグを立て、そのフラグが立っている時のみ、メッセージの比較を行う
     // エンドラインフラグ
 
+    // 解決 2020/10/22
+
     switch (LINBLE_GetState()) {
         case LINBLE_STATE_COMMAND:
             // リザルトメッセージ待機フラグが立っていたときのみ実行
@@ -279,12 +281,12 @@ void State_runRealtimeBLEInput(void) {
                     if (strcmp(&l_strBuf, "ACKN\r\n") == 0) {
                         PrintUART("read ackn\r\n");
                         LINBLE_SetState(LINBLE_STATE_ADVERTISE);
-                        // 受信待機フラグをクリアする
-                        LINBLE_ClrReceiveWaitFlg();
 
                     } else {
                         PrintUART("not receive messege \"ACKN\"\r\n");
                     }
+                    // 受信待機フラグをクリアする
+                    LINBLE_ClrReceiveWaitFlg();
                     // エンドラインフラグをクリア
                     LINBLE_ClrEndLineFlg();
 

@@ -108,6 +108,9 @@ uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
         o_strAddr++;
     }
 
+    // バッファカウントをクリア
+    LINBLE_ReceiveCount = 0;
+
     return i;
 }
 
@@ -156,6 +159,19 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
 
                                 break;
+                            case '2':
+                                // バージョンを表示する
+                                LINBLE_ShowVersion();
+                                // 受信待機フラグ
+                                LINBLE_ReceiveResultMesgWaitFlg = true;
+                                break;
+                            case '3':
+                                // LINBLEのデバイス名を表示する
+                                LINBLE_ShowDeviceName();
+                                // 受信待機フラグ
+                                LINBLE_ReceiveResultMesgWaitFlg = true;
+                                break;
+
                             default:
                                 break;
                         }
@@ -204,27 +220,21 @@ int8_t LINBLE_StartConnection(void) {
 }
 
 int8_t LINBLE_ShowVersion(void) {
-    uint8_t l_ret[BUF_STR_SIZE];
-
-    // コマンドを送信
-    if (LINBLE_sendCmd("BTZ\r\0", 5, &l_ret) != 0) {
-        PrintUART("sendCmd error\r\n");
-        return -2;
+    if (LINBLE_SendCommandToLINBLE("BTZ\r", 4) != 0) {
+        PrintUART("error StartConnection\r\n");
+        return -1;
+    } else {
+        return 0;
     }
-    PrintUART(l_ret);
-    return 0;
 }
 
 int8_t LINBLE_ShowDeviceName(void) {
-    uint8_t l_ret[BUF_STR_SIZE];
-
-    // コマンドを送信
-    if (LINBLE_sendCmd("BTM\r\0", 5, &l_ret) != 0) {
-        PrintUART("sendCmd error\r\n");
-        return -2;
+    if (LINBLE_SendCommandToLINBLE("BTM\r", 4) != 0) {
+        PrintUART("error StartConnection\r\n");
+        return -1;
+    } else {
+        return 0;
     }
-    PrintUART(l_ret);
-    return 0;
 }
 
 int8_t LINBLE_SendCommandToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize) {
