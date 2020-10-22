@@ -22,9 +22,8 @@ typedef enum {
 
 void State_Init(uint8_t i_state);
 void State_ChangeStateRoll(void);
-
+void State_RunRealtimeProcess(void);
 void State_RunProcess(void);
-
 
 void State_SetUpdateFlg(void);
 

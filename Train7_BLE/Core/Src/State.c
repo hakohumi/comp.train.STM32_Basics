@@ -110,8 +110,11 @@ void State_RunRealtimeProcess(void) {
         case SYS_STATE_DEBUG_POINTER:
             break;
         case SYS_STATE_DEBUG_RECIEVE:
+            UART_ReceiveInput(SystemState);
             break;
         case SYS_STATE_BLE:
+            UART_ReceiveInput(SystemState);
+            State_runRealtimeBLEInput();
             break;
         case SYS_STATE_DEBUG:
             break;
@@ -245,6 +248,14 @@ void State_runDebugOutput(void) {
 void State_runBLE(void) {
     LCD_ClearBuffer();
     LCD_WriteToBuffer(0, (uint8_t *)"BLE", 3);
+}
+
+void State_runRealtimeBLEInput(void) {
+    // LINBLEの状態を更新したい
+    // リンブル（UART1）から受信があった時、
+    // バッファを取りためて、
+    // 現在のLINBLEの状態と、受信した文字とを考慮して、
+    // 現在のLIBNLEの状態を更新する
 }
 
 uint8_t State_GetState(void) {

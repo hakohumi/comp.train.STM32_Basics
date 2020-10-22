@@ -221,8 +221,9 @@ int main(void) {
         // 状態に応じた処理の実行
         State_RunProcess();
 
-        // UART 受信処理
-        UART_ReceiveInput(State_GetState());
+        // リアルタイムで実行される処理
+        State_RunRealtimeProcess();
+
 
         // LCD更新
         LCD_BufferToLCD();
