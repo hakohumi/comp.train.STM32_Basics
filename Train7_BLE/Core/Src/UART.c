@@ -67,6 +67,7 @@ void UART_SetReceiveData(void) {
 
             UART_ReceiveLockFlg = true;
             i_data              = '\0';
+            UART_State          = UART_STATE_PUSHED_ENTER;
         }
 
         // 受信したデータを格納
@@ -131,20 +132,32 @@ void UART_Console_Init(UART_HandleTypeDef *huart) {
 
 // 新入力処理
 uint8_t UART_ReceiveInput(uint8_t i_state) {
+    bool l_do_flg = false;
+
 #ifdef MYDEBUG
     uint8_t l_buf[UART_RECEIVE_BUF];
 #endif
-    UART_State = UART_STATE_NONPUSHED;
 
     switch (i_state) {
+        // システム状態がUARTを使用する場合のみ実行フラグを立てる
         case SYS_STATE_DEBUG_RECIEVE:
+        case SYS_STATE_BLE:
+            l_do_flg = true;
+            break;
 
-            // とりあえず、Enter押したら、1行が表示されるようにする
-            // 前提：メインでずっと処理される
+        default:
+            // 何もしない
+            break;
+    }
 
-            // バッファビジーフラグが立っていたら
-            if (UART_ReceiveLockFlg == true) {
-                UART_State = UART_STATE_PUSHED_ENTER;
+    if (l_do_flg == true) {
+        // とりあえず、Enter押したら、1行が表示されるようにする
+        // 前提：メインでずっと処理される
+
+        // バッファビジーフラグが立っていたら
+        if (UART_ReceiveLockFlg == true) {
+            // エンターが押された時の処理
+            if (UART_State == UART_STATE_PUSHED_ENTER) {
 #ifdef MYDEBUG
                 UART_GetReceiveData(&l_buf, UART_RECEIVE_BUF);
                 PrintUART("DEBUG:UART_ReceiveInput() : ");
@@ -152,17 +165,28 @@ uint8_t UART_ReceiveInput(uint8_t i_state) {
                 PrintUART("\r\n");
 #endif
 
-                State_RunUARTRecieveInUART();
-                UART_ReceiveLockFlg = false;
+                switch (i_state) {
+                    case:
+                    SYS_STATE_DEBUG_RECIEVE:
+                        State_RunUARTRecieveInUART();
+                        break;
+                    case SYS_STATE_BLE:
+                        State_RunBLE
+                        break;
+
+                    default:
+                        // 何もしない
+                        break;
+                }
+
+                UART_State = UART_STATE_NONPUSHED;
             }
 
-            break;
-
-        default:
-            break;
+            UART_ReceiveLockFlg = false;
+        }
     }
 
-    return UART_State;
+    return l_do_flg;
 }
 
 // 最後に入力された文字を返す
