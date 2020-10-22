@@ -11,8 +11,15 @@
 #include "main.h"
 
 void LINBLE_Init(UART_HandleTypeDef *huart);
+void LINBLE_SetReceiveData(void);
 int8_t LINBLE_StartConnection(void);
 int8_t LINBLE_ShowVersion(void);
 int8_t LINBLE_ShowDeviceName(void);
+void LINBLE_Wait(void);
+
+uint8_t LINBLE_GetReceiveCharLast(void);
+
+// バッファに入っているデータを取得する
+uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize);
 
 #endif /* INC_LINBLE_H_ */

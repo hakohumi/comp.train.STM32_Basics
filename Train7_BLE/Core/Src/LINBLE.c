@@ -14,10 +14,29 @@
 #include "string.h"
 
 #define BUF_STR_SIZE 64
+#define LINBLE_RECEIVE_BUF 64
+
+typedef enum {
+    LINBLE_STATE_COMMAND,
+    LINBLE_STATE_ADVERTISE,
+    LINBLE_STATE_ONLINE,
+} LINBLE_State_Type;
+
+static int8_t LINBLEStatus = LINBLE_STATE_COMMAND;
+
+// 受信バッファ
+static uint8_t LINBLE_ReceiveData1[LINBLE_RECEIVE_BUF];
+// 最後の文字のバッファ
+static uint8_t LINBLE_ReceiveCharLast;
+
+// 受信した文字数
+static uint8_t LINBLE_ReceiveCount;
+// 最後のカウント
+static uint8_t LINBLE_ReceiveCountLast;
 
 static UART_HandleTypeDef *this_huart;
 
-static uint8_t l_recieveBuf[BUF_STR_SIZE];
+static uint8_t recieveBuf;
 
 int8_t LINBLE_sendCmd(uint8_t *i_cmd, uint8_t i_cmdLen, uint8_t *o_strbuf);
 
@@ -28,11 +47,84 @@ void LINBLE_Init(UART_HandleTypeDef *huart) {
     this_huart = huart;
 
     // LINBLE UART 受信設定
-//    HAL_UART_Receive_IT(&huart1, &l_recieveBuf, 1);
+    HAL_UART_Receive_IT(this_huart, &recieveBuf, 1);
 
     // BLEのイニシャライズ
     // リセット後、500ms以上待つ必要がある
     HAL_Delay(500);
+}
+
+// 受信したデータを格納する
+void LINBLE_SetReceiveData(void) {
+    uint8_t i_data = recieveBuf;
+
+    // 受信したデータを格納
+    LINBLE_ReceiveData1[LINBLE_ReceiveCount] = i_data;
+
+    // 前回の位置を記録
+    LINBLE_ReceiveCountLast = LINBLE_ReceiveCount;
+
+    // 入力桁数を増加
+    LINBLE_ReceiveCount++;
+
+    // 入力がバッファを超えたら、
+    if (LINBLE_ReceiveCount >= LINBLE_RECEIVE_BUF) {
+        // 最後に終端文字を入れる
+        LINBLE_ReceiveData1[LINBLE_RECEIVE_BUF] = '\0';
+
+        // バッファを最初からにする
+        LINBLE_ReceiveCount = 0;
+    }
+
+    HAL_UART_Receive_IT(this_huart, &recieveBuf, 1);
+}
+
+uint8_t LINBLE_GetReceiveCharLast(void) {
+    return recieveBuf;
+}
+
+// バッファに入っているデータを取得する
+uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
+    uint8_t i = 0;
+
+    while (i <= LINBLE_ReceiveCountLast && i < i_bufSize) {
+        *o_strAddr = LINBLE_ReceiveData1[i];
+        i++;
+        o_strAddr++;
+    }
+
+    return i;
+}
+
+void LINBLE_Wait(void) {
+    int8_t l_retMesg = 0;
+
+    switch (LINBLEStatus) {
+        case LINBLE_STATE_COMMAND:
+
+            // コマンド状態から、アドバタイズ状態へ遷移させる
+            // BTA<CR>コマンドを送信する
+
+            l_retMesg = LINBLE_StartConnection();
+            if (l_retMesg != 0) {
+                PrintUART((uint8_t *)"State_runBLE error\r\n");
+            } else {
+                // アドバタイズ状態へ遷移
+                LINBLEStatus = LINBLE_STATE_ADVERTISE;
+            }
+            break;
+        case LINBLE_STATE_ADVERTISE:
+            PrintUART((uint8_t *)"アドバタイズ状態です。\r\n");
+            break;
+
+        case LINBLE_STATE_ONLINE:
+            PrintUART((uint8_t *)"オンライン状態です。\r\n");
+            break;
+        default:
+            PrintUART((uint8_t *)"Error runBLE : switch default reached.\r\n");
+            break;
+    }
+    // アドバタイズ状態から接続に成功すると、"CONN<CR><LF>"が返ってくる。
 }
 
 // ペリフェラルのLINBLEをアドバタイズ状態へ遷移させ、セントラルに接続させる
@@ -50,12 +142,13 @@ int8_t LINBLE_StartConnection(void) {
 
     l_errorState = HAL_UART_Transmit_IT(this_huart, "BTA\r", 4);
 
+    HAL_UART_Receive_IT(this_huart, &recieveBuf, 1);
+
     if (l_errorState != 0) {
         PrintUART("error StartConnection\r\n");
 
         return -1;
     } else {
-        HAL_UART_Receive_IT(this_huart, &l_recieveBuf, 2);
         return 0;
     }
 

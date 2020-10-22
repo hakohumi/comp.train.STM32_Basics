@@ -13,7 +13,9 @@
 #include "main.h"
 
 void UART_Console_Init(UART_HandleTypeDef *huart);
+
 void UART_SetReceiveData(void);
+
 
 void UART_ReceiveCountUp(void);
 
@@ -21,20 +23,19 @@ int8_t PrintUART(uint8_t *i_str);
 int8_t PrintUARTn(uint8_t *i_str, uint8_t i_size);
 int8_t PrintUARTInt(uint32_t i_var);
 
-void PrintChar(uint8_t i_char);
+uint8_t PrintChar(uint8_t i_char);
 
 // デバッグ用
 // 文字列と数字を表示
 bool dprintUART(uint8_t *i_str, uint32_t i_var);
 bool printUARTHex(uint8_t *i_str, uint32_t i_var, uint8_t i_len);
-
-uint8_t UART_ReceiveInput(uint8_t i_state);
+uint8_t UART_ReceiveInput(uint8_t i_sysState);
+void UART_RunMemDump(void);
 
 uint8_t UART_GetReceiveLineFlg(void);
 void UART_ClrReceiveLineFlg(void);
 
 void PrintERROR(uint8_t i_errorCode);
-
 uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize);
 
 typedef enum {

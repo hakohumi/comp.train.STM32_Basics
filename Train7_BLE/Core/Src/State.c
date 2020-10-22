@@ -8,9 +8,7 @@
 #include "State.h"
 
 #include "Distance.h"
-#include "Dump.h"
 #include "LCD.h"
-#include "LINBLE.h"
 #include "Temp_ADC.h"
 #include "Temp_I2C.h"
 #include "UART.h"
@@ -21,12 +19,10 @@ void State_runViewDistance(void);
 void State_runMemDump(void);
 void State_runUARTRecieve(void);
 void State_runDebugOutput(void);
-void State_runBLE(void);
 
 // mainで宣言している
 // システムの状態
 static uint8_t SystemState;
-bool BLEreconnectFlg = true;
 
 // 処理の更新タイミング
 bool State_UpdateFlg = false;
@@ -90,8 +86,6 @@ void State_RunProcess(void) {
                 // シリアル送受信
             case SYS_STATE_DEBUG_RECIEVE:
                 State_runUARTRecieve();
-                BLEreconnectFlg = true;
-
                 break;
 
             case SYS_STATE_BLE:
@@ -103,6 +97,26 @@ void State_RunProcess(void) {
             default:
                 break;
         }
+    }
+}
+
+// リアルタイムで実行される
+void State_RunRealtimeProcess(void) {
+    switch (State_GetState()) {
+        case SYS_STATE_TEMP:
+            break;
+        case SYS_STATE_DISTANCE:
+            break;
+        case SYS_STATE_DEBUG_POINTER:
+            break;
+        case SYS_STATE_DEBUG_RECIEVE:
+            break;
+        case SYS_STATE_BLE:
+            break;
+        case SYS_STATE_DEBUG:
+            break;
+        default:
+            break;
     }
 }
 
@@ -157,80 +171,6 @@ void State_runMemDump(void) {
 void State_runUARTRecieve(void) {
     LCD_ClearBuffer();
     LCD_WriteToBuffer(0, (uint8_t *)"RECIEVE", 7);
-}
-
-// UARTのほうでリアルタイムで呼ばれる
-void State_RunUARTRecieveInUART(void) {
-    // 文字列バッファ
-    uint8_t l_strBuf[64];
-    // 文字列の長さ
-    uint8_t l_strLength = 0;
-    // 整数型の入力値
-    uint32_t l_value = 0;
-    // 文字列を16進数に変換した時の返り値
-    int8_t l_status;
-    // エンター何回目か
-    static uint8_t ls_EnterNum = 0;
-    // 引数1つ目と2つ目の値を格納する配列
-    static uint32_t ls_FuncArgumentArray[2] = {0, 0};
-
-    l_strLength = UART_GetReceiveData(&l_strBuf, 64);
-    PrintUARTInt(l_strLength);
-
-    if (l_strLength == 1) {
-        if (l_strBuf[0] == '\0') {
-            // enterの文字と、受信した文字列を表示
-            PrintUART((uint8_t *)"enter\r\n");
-        }
-    } else {
-        PrintUART((uint8_t *)"Input : ");
-        PrintUARTn(l_strBuf, 64);
-        PrintUART((uint8_t *)"\r\n");
-    }
-
-    // 入力された文字がコマンド(アドレス)かどうか
-    // 文字数チェック
-    if (l_strLength > 9) {
-        PrintERROR(ERROR_INPUT_OVERLENGTH);
-
-        goto INPUT_ERROR;
-    } else if (l_strLength == 1) {
-        // もし1文字目でエンターを押した場合
-        // 改行を表示するだけ
-        PrintERROR(ERROR_INPUT_SHORTLENGTH);
-
-        goto INPUT_ERROR;
-    }
-
-    // 文字列を16進数に変換
-    l_status = MyString_Atoi(&l_value, l_strBuf, l_strLength);
-    dprintUART("MyString_Atoi : ", l_value);
-
-    // 1要素目（開始アドレスの指定）
-    if (ls_EnterNum == 0) {
-        if (l_status == -1) {
-            goto INPUT_ERROR;
-        } else {
-            ls_FuncArgumentArray[0] = l_value;
-        }
-
-        ls_EnterNum = 1;
-        // 2要素目（読み取るサイズ）
-    } else if (ls_EnterNum == 1) {
-        if (l_status == -1) {
-            goto INPUT_ERROR;
-        } else {
-            ls_FuncArgumentArray[1] = l_value;
-        }
-
-        Dump_sendMemDumpUART((uint8_t *)ls_FuncArgumentArray[0],
-            ls_FuncArgumentArray[1]);
-
-    INPUT_ERROR:
-        ls_EnterNum             = 0;
-        ls_FuncArgumentArray[0] = 0;
-        ls_FuncArgumentArray[1] = 0;
-    }
 }
 
 void State_runDebugOutput(void) {
@@ -302,48 +242,9 @@ void State_runDebugOutput(void) {
 #endif
 }
 
-typedef enum {
-    LINBLE_STATE_COMMAND,
-    LINBLE_STATE_ADVERTISE,
-    LINBLE_STATE_ONLINE,
-} LINBLE_State_Type;
-
 void State_runBLE(void) {
-    static int8_t l_LINBLEStatus = LINBLE_STATE_COMMAND;
-
-    int8_t l_retMesg = 0;
     LCD_ClearBuffer();
     LCD_WriteToBuffer(0, (uint8_t *)"BLE", 3);
-
-    switch (l_LINBLEStatus) {
-        case LINBLE_STATE_COMMAND:
-
-            // コマンド状態から、アドバタイズ状態へ遷移させる
-            // BTA<CR>コマンドを送信する
-            if (BLEreconnectFlg == true) {
-                l_retMesg = LINBLE_StartConnection();
-                if (l_retMesg != 0) {
-                    PrintUART((uint8_t *)"State_runBLE error\r\n");
-                } else {
-                    // アドバタイズ状態へ遷移
-                    l_LINBLEStatus = LINBLE_STATE_ADVERTISE;
-                }
-                BLEreconnectFlg = false;
-            }
-            break;
-        case LINBLE_STATE_ADVERTISE:
-            PrintUART((uint8_t *)"アドバタイズ状態です。\r\n");
-            break;
-
-        case LINBLE_STATE_ONLINE:
-            PrintUART((uint8_t *)"オンライン状態です。\r\n");
-            break;
-        default:
-            PrintUART((uint8_t *)"Error runBLE : switch default reached.\r\n");
-            break;
-    }
-
-    // アドバタイズ状態から接続に成功すると、"CONN<CR><LF>"が返ってくる。
 }
 
 uint8_t State_GetState(void) {

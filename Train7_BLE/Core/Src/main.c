@@ -536,8 +536,22 @@ static void MX_GPIO_Init(void) {
 /* USER CODE BEGIN 4 */
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    uint8_t l_strBuf[64];
+
     if (huart == &huart1) {
         PrintUART("huart1 Rx test\r\n");
+        LINBLE_SetReceiveData();
+
+        switch (State_GetState()) {
+            case SYS_STATE_BLE:
+                if (LINBLE_GetReceiveCharLast() == '\n') {
+                    LINBLE_GetReceiveData(&l_strBuf, 64);
+                    PrintUART(l_strBuf);
+                }
+                break;
+            default:
+                break;
+        }
 
     } else if (huart == &huart2) {
         // 受信したデータを格納
@@ -545,7 +559,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
         switch (State_GetState()) {
             case SYS_STATE_DEBUG_RECIEVE:
-                 PrintChar(UART_GetReceiveCharLast());
+                PrintChar(UART_GetReceiveCharLast());
                 break;
             default:
                 break;
