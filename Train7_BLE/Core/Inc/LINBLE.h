@@ -13,9 +13,10 @@
 
 void LINBLE_Init(UART_HandleTypeDef *huart);
 void LINBLE_SetReceiveData(void);
-int8_t LINBLE_StartConnection(void);
-int8_t LINBLE_ShowVersion(void);
-int8_t LINBLE_ShowDeviceName(void);
+int8_t LINBLE_SendCmdStartConnection(void);
+int8_t LINBLE_SendCmdShowVersion(void);
+int8_t LINBLE_SendCmdShowDeviceName(void);
+int8_t LINBLE_SendCmdCheckStatus(void);
 uint8_t LINBLE_GetState(void);
 uint8_t LINBLE_SetState(uint8_t i_state);
 
@@ -32,7 +33,7 @@ void LINBLE_BufferCountClear(void);
 void LINBLE_EnterHandler(uint8_t i_sysState);
 
 uint8_t LINBLE_GetReceiveCharLast(void);
-int8_t LINBLE_SendCommandToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize);
+int8_t LINBLE_SendCmdStrToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize);
 
 // バッファに入っているデータを取得する
 uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize);

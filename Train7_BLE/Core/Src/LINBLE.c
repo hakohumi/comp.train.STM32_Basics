@@ -161,20 +161,20 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                         switch (l_strBuf[0]) {
                             case '1':
                                 PrintUART("pushed 1, Start connection.\r\n");
-                                LINBLE_StartConnection();
+                                LINBLE_SendCmdStartConnection();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
 
                                 break;
                             case '2':
                                 // バージョンを表示する
-                                LINBLE_ShowVersion();
+                                LINBLE_SendCmdShowVersion();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
                                 break;
                             case '3':
                                 // LINBLEのデバイス名を表示する
-                                LINBLE_ShowDeviceName();
+                                LINBLE_SendCmdShowDeviceName();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
                                 break;
@@ -228,8 +228,8 @@ void LINBLE_ClrReceiveResultMesgWaitFlg(void) {
 // ペリフェラルのLINBLEをアドバタイズ状態へ遷移させ、セントラルに接続させる
 // 接続が成功すると、0が返る
 // 接続が失敗すると、-1か返る
-int8_t LINBLE_StartConnection(void) {
-    if (LINBLE_SendCommandToLINBLE("BTA\r", 4) != 0) {
+int8_t LINBLE_SendCmdStartConnection(void) {
+    if (LINBLE_SendCmdStrToLINBLE("BTA\r", 4) != 0) {
         PrintUART("error StartConnection\r\n");
         return -1;
     } else {
@@ -237,25 +237,34 @@ int8_t LINBLE_StartConnection(void) {
     }
 }
 
-int8_t LINBLE_ShowVersion(void) {
-    if (LINBLE_SendCommandToLINBLE("BTZ\r", 4) != 0) {
-        PrintUART("error StartConnection\r\n");
+int8_t LINBLE_SendCmdCheckStatus(void) {
+    if (LINBLE_SendCmdStrToLINBLE("BTE\r", 4) != 0) {
+        PrintUART("error CheckStatus()\r\n");
         return -1;
     } else {
         return 0;
     }
 }
 
-int8_t LINBLE_ShowDeviceName(void) {
-    if (LINBLE_SendCommandToLINBLE("BTM\r", 4) != 0) {
-        PrintUART("error StartConnection\r\n");
+int8_t LINBLE_SendCmdShowVersion(void) {
+    if (LINBLE_SendCmdStrToLINBLE("BTZ\r", 4) != 0) {
+        PrintUART("error LINBLE_SendCmdShowVersion()\r\n");
         return -1;
     } else {
         return 0;
     }
 }
 
-int8_t LINBLE_SendCommandToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize) {
+int8_t LINBLE_SendCmdShowDeviceName(void) {
+    if (LINBLE_SendCmdStrToLINBLE("BTM\r", 4) != 0) {
+        PrintUART("error LINBLE_SendCmdShowDeviceName()\r\n");
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int8_t LINBLE_SendCmdStrToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize) {
     uint8_t l_ret[BUF_STR_SIZE];
     int8_t l_errorState = -1;
 
