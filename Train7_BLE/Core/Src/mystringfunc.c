@@ -11,12 +11,22 @@
 
 #define ENDOFLINE '\0'
 #define CARRIAGERETURN '\r'
+#define LINEFIELD '\n'
 
 // プロトタイプ宣言
 int8_t MyString_findChara(uint8_t *i_str, uint8_t i_bufsize, uint8_t i_chara);
 
 int8_t MyString_FindEOL(uint8_t *i_str, uint8_t i_bufsize) {
     return MyString_findChara(i_str, i_bufsize, ENDOFLINE);
+}
+
+// <CR>チェック
+int8_t MyString_FindCR(uint8_t *i_str, uint8_t i_bufsize) {
+    return MyString_findChara(i_str, i_bufsize, CARRIAGERETURN);
+}
+// <LF>チェック
+int8_t MyString_FindLF(uint8_t *i_str, uint8_t i_bufsize) {
+    return MyString_findChara(i_str, i_bufsize, LINEFIELD);
 }
 
 // 文字列の最後から、文字列を見つける
@@ -45,11 +55,6 @@ int8_t Mystring_FindStrFromEnd(uint8_t *i_str, uint8_t i_strSize, uint8_t *i_sea
     } else {
         return 0;
     }
-}
-
-// <CR>チェック
-int8_t MyString_FindCR(uint8_t *i_str, uint8_t i_bufsize) {
-    return MyString_findChara(i_str, i_bufsize, CARRIAGERETURN);
 }
 
 bool MyString_CheckCharCtrlCode(uint8_t i_char) {

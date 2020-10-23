@@ -343,8 +343,6 @@ void State_runRealtimeBLEInput(void) {
                         LINBLE_SetState(LINBLE_STATE_ADVERTISE);
 
                     } else {
-                        PrintUART("Receive messege is not Command.\r\n");
-
                         // 受信待機フラグをクリアする
                         LINBLE_ClrReceiveResultMesgWaitFlg();
                     }
@@ -382,7 +380,6 @@ void State_runRealtimeBLEInput(void) {
                         PrintUART("read DISC in advertise\r\n");
                         LINBLE_SetState(LINBLE_STATE_COMMAND);
                     } else {
-                        PrintUART("Receive messege is not Command.\r\n");
                     }
 
                     // エンドラインフラグをクリア
@@ -415,7 +412,6 @@ void State_runRealtimeBLEInput(void) {
                         PrintUART("read ACKN in online\r\n");
                         // LINBLE_SetState(LINBLE_STATE_COMMAND);
                     } else {
-                        PrintUART("Receive messege is not Command.\r\n");
                     }
 
                     // エンドラインフラグをクリア

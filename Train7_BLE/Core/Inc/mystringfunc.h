@@ -19,6 +19,7 @@ int8_t Mystring_FindStrFromEnd(uint8_t *i_str, uint8_t i_strSize, uint8_t *i_sea
 
 // <CR>チェック
 int8_t MyString_FindCR(uint8_t *i_str, uint8_t i_bufsize);
+int8_t MyString_FindLF(uint8_t *i_str, uint8_t i_bufsize);
 
 bool MyString_CheckCharCtrlCode(uint8_t i_char);
 

@@ -301,14 +301,22 @@ void UART_RunMemDump(void) {
 //　終端
 #define BUF_STR_SIZE 128
 int8_t PrintUART(uint8_t *i_str) {
+    uint8_t l_strLength = 0;
     /* ----------------------- エラー処理 -------------------*/
     // 文字数、終端文字
     /* ---------------------------------------------------- */
 
-    // 終端文字を見つけるまで かつ バッファ分まで
-    if (MyString_FindEOL(i_str, BUF_STR_SIZE) <= 0) {
-        PrintERROR(ERROR_UART_PRINTUART_ENDOFLINE);
-        return -1;
+    // 終端文字か改行文字を見つけるまで かつ バッファ分まで
+    l_strLength = MyString_FindEOL(i_str, BUF_STR_SIZE);
+    if (l_strLength == 0) {
+        l_strLength = MyString_FindLF(i_str, BUF_STR_SIZE);
+        if (l_strLength == 0) {
+            l_strLength = MyString_FindCR(i_str, BUF_STR_SIZE);
+            if (l_strLength == 0) {
+                PrintERROR(ERROR_UART_PRINTUART_ENDOFLINE);
+                return -1;
+            }
+        }
     }
 
     /* -------------------------------------*/
