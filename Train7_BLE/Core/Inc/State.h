@@ -16,9 +16,11 @@ typedef enum {
     SYS_STATE_DEBUG_POINTER,  // ポインタのデバッグ用
     SYS_STATE_DEBUG_RECIEVE,  // UARTの受信デバッグ用
     SYS_STATE_BLE,            // BLEテスト
-    SYS_STATE_DEBUG,          // UARTにデバッグ用の出力をする
-    SYS_STATE_LENGTH,         // LCDの画面の数
-} LCD_State_Type;
+    SYS_STATE_BLE_CENTRAL,      // BLE セントラル側
+    SYS_STATE_DEBUG,   // UARTにデバッグ用の出力をする
+    SYS_STATE_LENGTH,  // LCDの画面の数
+}
+LCD_State_Type;
 
 void State_Init(uint8_t i_state);
 void State_ChangeStateRoll(void);

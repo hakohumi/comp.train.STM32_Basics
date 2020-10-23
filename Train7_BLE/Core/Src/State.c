@@ -20,6 +20,10 @@ void State_runViewDistance(void);
 void State_runMemDump(void);
 void State_runUARTRecieve(void);
 void State_runDebugOutput(void);
+void State_runBLE(void);
+void State_runBLECentral(void);
+void State_runRealtimeBLEInput(void);
+void State_runRealtimeBLECentralInput(void);
 
 // mainで宣言している
 // システムの状態
@@ -42,25 +46,28 @@ void State_ChangeStateRoll(void) {
 
     switch (SystemState) {
         case SYS_STATE_TEMP:
-            dprintUART((uint8_t *)"SYS State TEMP : ", SystemState);
+            dprintUART((uint8_t *)"\r\nSYS State TEMP : ", SystemState);
             break;
         case SYS_STATE_DISTANCE:
-            dprintUART((uint8_t *)"SYS State DISTANCE : ", SystemState);
+            dprintUART((uint8_t *)"\r\nSYS State DISTANCE : ", SystemState);
             break;
         case SYS_STATE_DEBUG_POINTER:
-            dprintUART((uint8_t *)"SYS State DEBUG POINTER : ", SystemState);
+            dprintUART((uint8_t *)"\r\nSYS State DEBUG POINTER : ", SystemState);
             break;
         case SYS_STATE_DEBUG_RECIEVE:
-            PrintUART((uint8_t *)"SYS State DEBUG RECIEVE\r\n");
+            PrintUART((uint8_t *)"\r\nSYS State DEBUG RECIEVE\r\n");
             break;
         case SYS_STATE_BLE:
-            PrintUART((uint8_t *)"SYS_STATE_BLE\r\n");
+            PrintUART((uint8_t *)"\r\nSYS_STATE_BLE\r\n");
+            break;
+        case SYS_STATE_BLE_CENTRAL:
+            PrintUART((uint8_t *)"\r\nSYS_STATE_BLE_CENTRAL\r\n");
             break;
         case SYS_STATE_DEBUG:
-            dprintUART((uint8_t *)"SYS State DEBUG : ", SystemState);
+            dprintUART((uint8_t *)"\r\nSYS State DEBUG : ", SystemState);
             break;
         default:
-            PrintUART((uint8_t *)"SYS State main未登録\r\n");
+            PrintUART((uint8_t *)"\r\nSYS State main未登録\r\n");
             break;
     }
 }
@@ -88,6 +95,9 @@ void State_RunProcess(void) {
                 break;
             case SYS_STATE_BLE:
                 State_runBLE();
+                break;
+            case SYS_STATE_BLE_CENTRAL:
+                State_runBLECentral();
                 break;
             case SYS_STATE_DEBUG:
                 State_runDebugOutput();
@@ -126,6 +136,21 @@ void State_RunRealtimeProcess(void) {
 
             UART_ReceiveInput(SystemState);
             State_runRealtimeBLEInput();
+            break;
+
+        case SYS_STATE_BLE_CENTRAL:
+            // 状態に入って1回だけ実行する処理
+            if (l_StateOld != l_SysState) {
+                PrintUART("BLE Central Command Mode\r\n");
+                PrintUART("Please enter the Commond.\r\n");
+                PrintUART("Command list :\r\n");
+                PrintUART("\"1\" : Transition to advertised state.\r\n");
+                PrintUART("\"2\" : Print LINBLE firmware version.\r\n");
+                PrintUART("\"3\" : Print LINBLE Bluetooth device address.\r\n");
+            }
+
+            UART_ReceiveInput(SystemState);
+            State_runRealtimeBLECentralInput();
             break;
         case SYS_STATE_DEBUG:
             break;
@@ -295,6 +320,14 @@ void State_runBLE(void) {
 #endif
 }
 
+void State_runBLECentral(void) {
+    LCD_ClearBuffer();
+    LCD_WriteToBuffer(0, (uint8_t *)"BLE", 3);
+    LCD_WriteToBuffer(8, (uint8_t *)"CENTRAL", 7);
+}
+
+void State_runRealtimeBLECentralInput(void) {
+}
 void State_runRealtimeBLEInput(void) {
     static uint8_t l_linbleStateOld = LINBLE_STATE_COMMAND;
     uint8_t l_linbleState           = LINBLE_GetState();
