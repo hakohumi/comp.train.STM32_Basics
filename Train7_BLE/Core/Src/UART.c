@@ -363,7 +363,7 @@ uint8_t PrintChar(uint8_t i_char) {
     } else if (i_char == '\r' || i_char == '\n') {
         status = HAL_UART_Transmit(this_huart, (uint8_t *)"\r\n", (uint16_t)2, 0xffff);
     } else {
-        status = 0;
+        status = HAL_UART_Transmit(this_huart, (uint8_t *)".", (uint16_t)1, 0xffff);
     }
     return status == HAL_OK;
 }

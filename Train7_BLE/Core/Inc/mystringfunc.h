@@ -14,6 +14,9 @@
 // 終端文字の検索
 int8_t MyString_FindEOL(uint8_t *i_str, uint8_t i_bufsize);
 
+// 終端から文字列の検索
+int8_t Mystring_FindStrFromEnd(uint8_t *i_str, uint8_t i_strSize, uint8_t *i_searchStr, uint8_t i_searchSize);
+
 // <CR>チェック
 int8_t MyString_FindCR(uint8_t *i_str, uint8_t i_bufsize);
 

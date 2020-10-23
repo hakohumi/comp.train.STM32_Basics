@@ -19,6 +19,34 @@ int8_t MyString_FindEOL(uint8_t *i_str, uint8_t i_bufsize) {
     return MyString_findChara(i_str, i_bufsize, ENDOFLINE);
 }
 
+// 文字列の最後から、文字列を見つける
+// 出力はint8_t
+// 入力は 検索する文字列、検索する文字列のサイズ、検索したい文字列、検索したい文字列のサイズ
+int8_t Mystring_FindStrFromEnd(uint8_t *i_str, uint8_t i_strSize, uint8_t *i_searchStr, uint8_t i_searchSize) {
+    uint8_t *l_cmdPnt;
+
+    // 検索したい文字列の先頭の文字の位置をだす
+    l_cmdPnt = strrchr(i_str, i_searchStr[0]);
+
+    // 未検出
+    if (l_cmdPnt == NULL) {
+        return -1;
+    }
+
+    // エラーになりそうなところ
+    // 見つけたところから、検索したい文字列のサイズが、検索する文字列の最後の位置よりはみ出ること
+    if (i_strSize - (l_cmdPnt - i_str) < i_searchSize) {
+        return -1;
+    }
+
+    // 見つかったら1、見つからなかったら0
+    if (strncmp(l_cmdPnt, i_searchStr, i_searchSize) == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 // <CR>チェック
 int8_t MyString_FindCR(uint8_t *i_str, uint8_t i_bufsize) {
     return MyString_findChara(i_str, i_bufsize, CARRIAGERETURN);

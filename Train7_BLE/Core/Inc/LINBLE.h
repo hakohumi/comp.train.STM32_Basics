@@ -21,7 +21,7 @@ uint8_t LINBLE_SetState(uint8_t i_state);
 
 // リザルトメッセージ待機フラグ
 bool LINBLE_GetReceiveResultMesgWaitFlg(void);
-void LINBLE_ClrReceiveWaitFlg(void);
+void LINBLE_ClrReceiveResultMesgWaitFlg(void);
 
 // エンドラインフラグ
 bool LINBLE_GetEndLineFlg(void);

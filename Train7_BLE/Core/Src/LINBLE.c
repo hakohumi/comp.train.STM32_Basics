@@ -57,6 +57,7 @@ void LINBLE_Init(UART_HandleTypeDef *huart) {
 void LINBLE_SetReceiveData(void) {
     uint8_t i_data = recieveBuf;
 
+    // リザルトメッセージの最後が<CR><LF>なことを利用して、コマンドの最後を検出
     if (i_data == '\n') {
         LINBLE_EndLineFlg = true;
     }
@@ -97,16 +98,23 @@ uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
     uint8_t i = 0;
 
     // バッファサイズより大きい場合の例外
-    if (LINBLE_ReceiveCountLast > i_bufSize) {
-        PrintUART("error linble getreceivedata \r\n");
+    if (LINBLE_ReceiveCountLast > i_bufSize - 1) {
+        PrintUART("error linble getreceivedata\r\n");
         return 0;
     }
 
-    while (i <= LINBLE_ReceiveCountLast && i < i_bufSize) {
+    while (i <= LINBLE_ReceiveCountLast && i < i_bufSize - 1) {
         *o_strAddr = LINBLE_ReceiveData1[i];
         i++;
         o_strAddr++;
     }
+
+    *o_strAddr = '\0';
+
+#ifdef MYDEBUG
+    PrintUART(o_strAddr);
+    PrintUART("\r\n");
+#endif
 
     return i;
 }
@@ -124,11 +132,7 @@ uint8_t LINBLE_GetState(void) {
 uint8_t LINBLE_SetState(uint8_t i_state) {
     switch (i_state) {
         case LINBLE_STATE_COMMAND:
-            LINBLEStatus = i_state;
-            break;
         case LINBLE_STATE_ADVERTISE:
-            LINBLEStatus = i_state;
-            break;
         case LINBLE_STATE_ONLINE:
             LINBLEStatus = i_state;
             break;
@@ -206,7 +210,7 @@ bool LINBLE_GetReceiveResultMesgWaitFlg(void) {
     return LINBLE_ReceiveResultMesgWaitFlg;
 }
 
-void LINBLE_ClrReceiveWaitFlg(void) {
+void LINBLE_ClrReceiveResultMesgWaitFlg(void) {
     LINBLE_ReceiveResultMesgWaitFlg = false;
 }
 

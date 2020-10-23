@@ -539,6 +539,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     uint8_t l_strBuf[64];
 
     if (huart == &huart1) {
+        // LINBLEからの受信に関しての問題
+        // 受信される文字列の終端がある場合とない場合で、PrintUARTのエラーがでる場合がある
+        
         PrintUART("huart1 Rx test\r\n");
         LINBLE_SetReceiveData();
 

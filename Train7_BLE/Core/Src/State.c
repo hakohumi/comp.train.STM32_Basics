@@ -103,7 +103,10 @@ void State_RunProcess(void) {
 
 // リアルタイムで実行される
 void State_RunRealtimeProcess(void) {
-    switch (State_GetState()) {
+    static uint8_t l_StateOld = 99;
+    uint8_t l_SysState        = State_GetState();
+
+    switch (l_SysState) {
         case SYS_STATE_TEMP:
             break;
         case SYS_STATE_DISTANCE:
@@ -114,6 +117,16 @@ void State_RunRealtimeProcess(void) {
             UART_ReceiveInput(SystemState);
             break;
         case SYS_STATE_BLE:
+            // 状態に入って1回だけ実行する処理
+            if (l_StateOld != l_SysState) {
+                PrintUART("BLE Command Mode\r\n");
+                PrintUART("Please enter the Commond.\r\n");
+                PrintUART("Command list :\r\n");
+                PrintUART("\"1\" : Transition to advertised state.\r\n");
+                PrintUART("\"2\" : Print LINBLE firmware version.\r\n");
+                PrintUART("\"3\" : Print LINBLE Bluetooth device address.\r\n");
+            }
+
             UART_ReceiveInput(SystemState);
             State_runRealtimeBLEInput();
             break;
@@ -122,6 +135,8 @@ void State_RunRealtimeProcess(void) {
         default:
             break;
     }
+
+    l_StateOld = l_SysState;
 }
 
 void State_runViewTemp(void) {
@@ -247,8 +262,20 @@ void State_runDebugOutput(void) {
 }
 
 void State_runBLE(void) {
+    uint8_t l_strBuf[64];
+    uint8_t l_strLength;
+
     LCD_ClearBuffer();
     LCD_WriteToBuffer(0, (uint8_t *)"BLE", 3);
+
+#ifdef MYDEBUG
+    l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+    PrintUART("LINBLE data buf : ");
+    PrintUART(&l_strBuf);
+    PrintUART("str length : ");
+    PrintUARTInt(l_strLength);
+    PrintUART("\r\n");
+#endif
 }
 
 void State_runRealtimeBLEInput(void) {
@@ -270,6 +297,15 @@ void State_runRealtimeBLEInput(void) {
 
     // 解決 2020/10/22
 
+    // 問題：DISCのメッセージを受取る時に、前のバッファも入って表示されてしまう
+    // 原因：オンライン状態になって、終端なしの文字を受信すると、バッファの最後が終端以外の文字になる
+    // 　　　すると、文字列の比較をした時に、バッファの最初から比較をした時に、ずれて比較されてしまう
+    // 解決策：バッファの後ろから比較する
+    // 解決策2：エンドラインフラグが立つタイミングの調整
+    //            → エンドラインフラグは、リザルトメッセージの最後の\nが受信すると立つため、そこから解決策1を実行するのが良い
+    // 解決策1の流れ：① エンドラインフラグが立ったとき、バッファの後ろから、探したい文字列の先頭文字をstrchrで検索し、ポインタの位置を取得
+    // 　　　　　　　　② バッファのポインタに検索した文字のアドレスを足して、そこから文字列の比較(strcmp)を行う
+
     switch (LINBLE_GetState()) {
         case LINBLE_STATE_COMMAND:
             // リザルトメッセージ待機フラグが立っていたときのみ実行
@@ -278,20 +314,20 @@ void State_runRealtimeBLEInput(void) {
                 // アドバタイズ状態へ遷移したことがわかるには、ACKN<CR><LF>
                 l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
                 if (l_strLength > 0) {
-                    if (strcmp(&l_strBuf, "ACKN\r\n") == 0) {
+                    if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
                         PrintUART("read ackn\r\n");
                         LINBLE_SetState(LINBLE_STATE_ADVERTISE);
 
                     } else {
                         PrintUART("not receive messege \"ACKN\"\r\n");
+                        // 受信待機フラグをクリアする
+                        LINBLE_ClrReceiveResultMesgWaitFlg();
                     }
 
-                    // バッファカウンタのクリア
-                    LINBLE_BufferCountClear();
-                    // 受信待機フラグをクリアする
-                    LINBLE_ClrReceiveWaitFlg();
                     // エンドラインフラグをクリア
                     LINBLE_ClrEndLineFlg();
+                    // バッファカウンタのクリア
+                    LINBLE_BufferCountClear();
 
                 } else {
                     PrintUART("error linble run realtime ble input state command \r\n");
@@ -303,8 +339,56 @@ void State_runRealtimeBLEInput(void) {
             break;
         case LINBLE_STATE_ADVERTISE:
 
+            // アドバタイズ状態は、受信メッセージをずっと受け付ける
+
+            if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
+                l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+                if (l_strLength > 0) {
+                    if (Mystring_FindStrFromEnd(l_strBuf, 64, "CONN\r\n", 6) == 1) {
+                        PrintUART("read CONN\r\n");
+                        LINBLE_SetState(LINBLE_STATE_ONLINE);
+
+                    } else {
+                        PrintUART("not receive messege \"CONN\"\r\n");
+                    }
+
+                    // エンドラインフラグをクリア
+                    LINBLE_ClrEndLineFlg();
+                    // バッファカウンタのクリア
+                    LINBLE_BufferCountClear();
+
+                } else {
+                    PrintUART("error linble run realtime ble input state command \r\n");
+                }
+            }
+
             break;
         case LINBLE_STATE_ONLINE:
+            // オンライン状態では、入出力をそのまま送受信する
+            // ただ、"@@@"を入力するとエスケープ状態へ移行する
+            // また、"DISC<CR><LF>を受信すると、アドバタイズ状態へ遷移する
+
+            if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
+                l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+                if (l_strLength > 0) {
+                    if (Mystring_FindStrFromEnd(l_strBuf, 64, "DISC\r\n", 6) == 1) {
+                        PrintUART("read DISC\r\n");
+                        LINBLE_SetState(LINBLE_STATE_ADVERTISE);
+
+                    } else {
+                        PrintUART("not receive messege \"DISC\"\r\n");
+                    }
+
+                    // エンドラインフラグをクリア
+                    LINBLE_ClrEndLineFlg();
+                    // バッファカウンタのクリア
+                    LINBLE_BufferCountClear();
+
+                } else {
+                    PrintUART("error linble run realtime ble input state command \r\n");
+                }
+            }
+
             break;
         default:
             PrintUART("error unrealtime Ble input \r\n");
