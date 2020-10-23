@@ -73,9 +73,7 @@ void State_RunProcess(void) {
         /* LCD に書き込み */
         switch (State_GetState()) {
             case SYS_STATE_TEMP:
-
                 State_runViewTemp();
-
                 break;
             case SYS_STATE_DISTANCE:
                 State_runViewDistance();
@@ -88,7 +86,6 @@ void State_RunProcess(void) {
             case SYS_STATE_DEBUG_RECIEVE:
                 State_runUARTRecieve();
                 break;
-
             case SYS_STATE_BLE:
                 State_runBLE();
                 break;
@@ -268,14 +265,33 @@ void State_runBLE(void) {
     LCD_ClearBuffer();
     LCD_WriteToBuffer(0, (uint8_t *)"BLE", 3);
 
-//#define MYDEBUG_BLE_BUF
+// #define MYDEBUG_BLE_BUF
 #ifdef MYDEBUG_BLE_BUF
     l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
-    PrintUART("LINBLE data buf : ");
+    PrintUART("LINBLE Receive data buf : ");
     PrintUART(&l_strBuf);
     PrintUART("str length : ");
     PrintUARTInt(l_strLength);
     PrintUART("\r\n");
+    l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+    PrintUART("UART Send data buf : ");
+    PrintUART(&l_strBuf);
+    PrintUART("str length : ");
+    PrintUARTInt(l_strLength);
+    PrintUART("\r\n");
+#endif
+
+// #define MYDEBUG_BLE_STATE
+#ifdef MYDEBUG_BLE_STATE
+    switch (LINBLE_GetState()) {
+        case LINBLE_STATE_COMMAND:
+            LINBLE_SendCmdCheckStatus();
+            break;
+        case LINBLE_STATE_ADVERTISE:
+            LINBLE_SendCmdCheckStatus();
+            break;
+    }
+
 #endif
 }
 
@@ -334,13 +350,15 @@ void State_runRealtimeBLEInput(void) {
                 // コマンド状態中にBTAを入力されると、アドバタイズ状態へ遷移する
                 // アドバタイズ状態へ遷移したことがわかるには、ACKN<CR><LF>
                 l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
-                PrintUART(&l_strBuf);
-                PrintUART("\r\n");
 
                 if (l_strLength > 0) {
+                    PrintUART(&l_strBuf);
+                    PrintUART("\r\n");
+
                     if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
                         PrintUART("read ackn\r\n");
                         LINBLE_SetState(LINBLE_STATE_ADVERTISE);
+                        LINBLE_SetEscapeStateFlg();
 
                     } else {
                         // 受信待機フラグをクリアする
@@ -360,25 +378,30 @@ void State_runRealtimeBLEInput(void) {
                 // 何もしない
             }
             break;
+
         case LINBLE_STATE_ADVERTISE:
 
             // アドバタイズ状態は、受信メッセージをずっと受け付ける
 
             if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
                 l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
-                PrintUART(&l_strBuf);
-                PrintUART("\r\n");
 
                 if (l_strLength > 0) {
+                    PrintUART(&l_strBuf);
+                    PrintUART("\r\n");
+
                     if (Mystring_FindStrFromEnd(l_strBuf, 64, "CONN\r\n", 6) == 1) {
                         PrintUART("read CONN in advertise\r\n");
                         LINBLE_SetState(LINBLE_STATE_ONLINE);
+                        LINBLE_ClrReceiveResultMesgWaitFlg();
+
                     } else if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
                         PrintUART("read ACKN in advertise\r\n");
                         // LINBLE_SetState(LINBLE_STATE_COMMAND);
                     } else if (Mystring_FindStrFromEnd(l_strBuf, 64, "DISC\r\n", 6) == 1) {
                         PrintUART("read DISC in advertise\r\n");
                         LINBLE_SetState(LINBLE_STATE_COMMAND);
+                        LINBLE_ClrReceiveResultMesgWaitFlg();
                     } else {
                     }
 
@@ -400,6 +423,7 @@ void State_runRealtimeBLEInput(void) {
             // コマンドを受信した場合
             if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
                 l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+
                 if (l_strLength > 0) {
                     PrintUART(&l_strBuf);
                     PrintUART("\r\n");

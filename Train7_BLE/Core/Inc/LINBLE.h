@@ -28,6 +28,10 @@ void LINBLE_ClrReceiveResultMesgWaitFlg(void);
 bool LINBLE_GetEndLineFlg(void);
 bool LINBLE_CleEndLineFlg(void);
 
+bool LINBLE_GetEscapeStateFlg(void);
+void LINBLE_SetEscapeStateFlg(void);
+void LINBLE_ClrEscapeStateFlg(void);
+
 void LINBLE_BufferCountClear(void);
 
 void LINBLE_EnterHandler(uint8_t i_sysState);

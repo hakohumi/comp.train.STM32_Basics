@@ -19,6 +19,8 @@
 
 static int8_t LINBLEStatus = LINBLE_STATE_COMMAND;
 
+static bool LINBLE_EscapeStateFlg = false;
+
 // 受信バッファ
 static uint8_t LINBLE_ReceiveData1[LINBLE_RECEIVE_BUF];
 // 最後の文字のバッファ
@@ -91,6 +93,16 @@ bool LINBLE_GetEndLineFlg(void) {
 }
 void LINBLE_ClrEndLineFlg(void) {
     LINBLE_EndLineFlg = false;
+}
+
+bool LINBLE_GetEscapeStateFlg(void) {
+    return LINBLE_EscapeStateFlg;
+}
+void LINBLE_SetEscapeStateFlg(void) {
+    LINBLE_EscapeStateFlg = true;
+}
+void LINBLE_ClrEscapeStateFlg(void) {
+    LINBLE_EscapeStateFlg = false;
 }
 
 // バッファに入っているデータを取得する
@@ -178,6 +190,11 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
                                 break;
+                            case '4':
+                                // LINBLEの現在の状態を取得する
+                                LINBLE_SendCmdCheckStatus();
+                                // 受信待機フラグ
+                                LINBLE_ReceiveResultMesgWaitFlg = true;
 
                             default:
                                 break;
@@ -196,6 +213,7 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                     if (l_strLength > 0) {
                         if (PrintLINBLE(&l_strBuf, l_strLength) == true) {
                             PrintUART("Send Done, to LINBLE.\r\n");
+                            // PrintUARTn(&l_strBuf, l_strLength);
                         } else {
                             PrintUART("Not Send, to LINBLE.\r\n");
                         }

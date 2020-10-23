@@ -68,8 +68,8 @@ void UART_SetReceiveData(void) {
             UART_ReceiveEnterFlg = true;
 
             UART_ReceiveLockFlg = true;
-            i_data              = '\0';
-            UART_State          = UART_STATE_PUSHED_ENTER;
+            // i_data              = '\0';
+            UART_State = UART_STATE_PUSHED_ENTER;
         }
 
         // 受信したデータを格納
@@ -94,8 +94,9 @@ void UART_SetReceiveData(void) {
         }
 
         if (UART_ReceiveEnterFlg == true) {
-            UART_ReceiveEnterFlg = false;
-            UART_ReceiveCount    = 0;
+            UART_ReceiveEnterFlg                 = false;
+            UART_ReceiveData1[UART_ReceiveCount] = '\0';
+            UART_ReceiveCount                    = 0;
         }
 
         // バッファの最初に戻ったかどうか
@@ -449,7 +450,6 @@ void PrintERROR(uint8_t i_errorCode) {
         case ERROR_MYSTRINGFUNC_NOTFIND_ENDOFLINE:
             PrintUART("ERROR_MYSTRINGFUNC_NOTFIND_ENDOFLINE\r\n");
             break;
-
         case ERROR_LINBLE_RECIEVEFAILURE:
             PrintUART("ERROR_LINBLE_RECIEVEFAILURE\r\n");
             break;
