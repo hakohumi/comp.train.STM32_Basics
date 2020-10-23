@@ -187,11 +187,22 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                     break;
 
                 case LINBLE_STATE_ADVERTISE:
-                    PrintUART((uint8_t *)"アドバタイズ状態です。\r\n");
+
                     break;
 
                 case LINBLE_STATE_ONLINE:
-                    PrintUART((uint8_t *)"オンライン状態です。\r\n");
+
+                    l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+                    if (l_strLength > 0) {
+                        if (PrintLINBLE(&l_strBuf, l_strLength) == true) {
+                            PrintUART("Send Done, to LINBLE.\r\n");
+                        } else {
+                            PrintUART("Not Send, to LINBLE.\r\n");
+                        }
+                    } else {
+                        PrintUART("linble online enter error\r\n");
+                    }
+
                     break;
                 default:
                     PrintUART((uint8_t *)"Error runBLE : switch default reached.\r\n");
@@ -262,4 +273,30 @@ int8_t LINBLE_SendCommandToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize) {
     } else {
         return 0;
     }
+}
+
+int8_t PrintLINBLE(uint8_t *i_str, uint8_t i_size) {
+    uint8_t l_strBuf[i_size + 1];
+    uint8_t i = 0;
+
+    while (i < i_size) {
+        l_strBuf[i] = *i_str;
+        i_str++;
+        i++;
+    }
+    l_strBuf[i] = '\0';
+
+    /* ----------------------- エラー処理 -------------------*/
+    // 文字数、終端文字
+    /* ---------------------------------------------------- */
+
+    // 終端文字を見つけるまで かつ バッファ分まで
+    if (MyString_FindEOL(&l_strBuf, i_size + 1) <= 0) {
+        l_strBuf[i_size] = '\0';
+    }
+
+    /* -------------------------------------*/
+
+    int status = HAL_UART_Transmit(this_huart, &l_strBuf, (uint16_t)(strlen((const char *)&l_strBuf)), 0xffff);
+    return status == HAL_OK;
 }

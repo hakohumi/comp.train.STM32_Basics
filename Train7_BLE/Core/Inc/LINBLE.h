@@ -37,6 +37,8 @@ int8_t LINBLE_SendCommandToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize);
 // バッファに入っているデータを取得する
 uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize);
 
+int8_t PrintLINBLE(uint8_t *i_str, uint8_t i_size);
+
 typedef enum {
     LINBLE_STATE_COMMAND,
     LINBLE_STATE_ADVERTISE,

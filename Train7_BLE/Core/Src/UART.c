@@ -138,7 +138,7 @@ uint8_t UART_ReceiveInput(uint8_t i_sysState) {
         if (UART_ReceiveLockFlg == true) {
             // エンターが押された時の処理
             if (UART_State == UART_STATE_PUSHED_ENTER) {
-#ifdef MYDEBUG
+#ifdef MYDEBUG_UART_RECEIVEINPUT
                 UART_GetReceiveData(&l_buf, UART_RECEIVE_BUF);
                 PrintUART("DEBUG:UART_ReceiveInput() : ");
                 PrintUART(l_buf);

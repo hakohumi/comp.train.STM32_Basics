@@ -541,12 +541,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart == &huart1) {
         // LINBLEからの受信に関しての問題
         // 受信される文字列の終端がある場合とない場合で、PrintUARTのエラーがでる場合がある
-        
-        PrintUART("huart1 Rx test\r\n");
+
+        PrintUART("huart1 Rx done. data : ");
+        PrintChar(LINBLE_GetReceiveCharLast());
+        PrintUART("\r\n");
+
         LINBLE_SetReceiveData();
 
         switch (State_GetState()) {
             case SYS_STATE_BLE:
+                // コマンドを受信した場合、ターミナルにコマンドを表示させる
                 if (LINBLE_GetReceiveCharLast() == '\n') {
                     LINBLE_GetReceiveData(&l_strBuf, 64);
                     PrintUART("uart1 Rx interrupt : ");
