@@ -327,8 +327,9 @@ int8_t LINBLE_SendCmdShowDeviceName(void) {
     }
 }
 
+// 最大8台、タイムアウト2秒
 int8_t LINBLE_SendCmdScanDevice(void) {
-    if (LINBLE_SendCmdStrToLINBLE("BTI81\r", 6) != 0) {
+    if (LINBLE_SendCmdStrToLINBLE("BTI82\r", 6) != 0) {
         PrintUART("error LINBLE_SendCmdScanDevice()\r\n");
         return -1;
     } else {
