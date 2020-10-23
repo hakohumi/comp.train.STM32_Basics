@@ -195,6 +195,7 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                                 LINBLE_SendCmdCheckStatus();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
+                                break;
 
                             default:
                                 break;
@@ -229,6 +230,50 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
 
             break;
 
+        case SYS_STATE_BLE_CENTRAL:
+            switch (LINBLEStatus) {
+                case LINBLE_STATE_COMMAND:
+                    l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+                    if (l_strLength == 2) {
+                        switch (l_strBuf[0]) {
+                            case '1':
+                                PrintUART("pushed 1, Start scan around.\r\n");
+                                LINBLE_SendCmdScanDevice();
+                                // 受信待機フラグ
+                                LINBLE_ReceiveResultMesgWaitFlg = true;
+
+                                break;
+                            case '2':
+                                // バージョンを表示する
+                                LINBLE_SendCmdShowVersion();
+                                // 受信待機フラグ
+                                LINBLE_ReceiveResultMesgWaitFlg = true;
+                                break;
+                            case '3':
+                                // LINBLEのデバイス名を表示する
+                                LINBLE_SendCmdShowDeviceName();
+                                // 受信待機フラグ
+                                LINBLE_ReceiveResultMesgWaitFlg = true;
+                                break;
+                            case '4':
+                                // LINBLEの現在の状態を取得する
+                                LINBLE_SendCmdCheckStatus();
+                                // 受信待機フラグ
+                                LINBLE_ReceiveResultMesgWaitFlg = true;
+                                break;
+
+                            default:
+                                break;
+                        }
+                    }
+
+                    break;
+                // SYS_STATE_BLE_CENTRAL switch
+                default:
+                    break;
+            }
+
+        // sys_state
         default:
             // 何もしない
             break;
@@ -276,6 +321,15 @@ int8_t LINBLE_SendCmdShowVersion(void) {
 int8_t LINBLE_SendCmdShowDeviceName(void) {
     if (LINBLE_SendCmdStrToLINBLE("BTM\r", 4) != 0) {
         PrintUART("error LINBLE_SendCmdShowDeviceName()\r\n");
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+int8_t LINBLE_SendCmdScanDevice(void) {
+    if (LINBLE_SendCmdStrToLINBLE("BTI81\r", 6) != 0) {
+        PrintUART("error LINBLE_SendCmdScanDevice()\r\n");
         return -1;
     } else {
         return 0;

@@ -123,6 +123,7 @@ uint8_t UART_ReceiveInput(uint8_t i_sysState) {
         // システム状態がUARTを使用する場合のみ実行フラグを立てる
         case SYS_STATE_DEBUG_RECIEVE:
         case SYS_STATE_BLE:
+        case SYS_STATE_BLE_CENTRAL:
             l_do_flg = true;
             break;
 
@@ -164,10 +165,6 @@ void UART_enterHundler(uint8_t i_sysState) {
         case SYS_STATE_DEBUG_RECIEVE:
             UART_RunMemDump();
             break;
-        case SYS_STATE_BLE:
-
-            break;
-
         default:
             // 何もしない
             break;
@@ -365,14 +362,16 @@ uint8_t PrintChar(uint8_t i_char) {
     int status;
     uint8_t l_buf[2];
 
+    l_buf[0] = i_char;
+    l_buf[1] = 0;
+
     if (MyString_CheckCharCtrlCode(i_char) == true) {
-        l_buf[0] = i_char;
-        l_buf[1] = 0;
-        status   = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
+        status = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
     } else if (i_char == '\r' || i_char == '\n') {
-        status = HAL_UART_Transmit(this_huart, (uint8_t *)"\r\n", (uint16_t)2, 0xffff);
+        status = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
     } else {
-        status = HAL_UART_Transmit(this_huart, (uint8_t *)".", (uint16_t)1, 0xffff);
+        l_buf[0] = '.';
+        status   = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
     }
     return status == HAL_OK;
 }

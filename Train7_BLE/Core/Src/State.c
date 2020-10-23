@@ -326,8 +326,6 @@ void State_runBLECentral(void) {
     LCD_WriteToBuffer(8, (uint8_t *)"CENTRAL", 7);
 }
 
-void State_runRealtimeBLECentralInput(void) {
-}
 void State_runRealtimeBLEInput(void) {
     static uint8_t l_linbleStateOld = LINBLE_STATE_COMMAND;
     uint8_t l_linbleState           = LINBLE_GetState();
@@ -487,6 +485,72 @@ void State_runRealtimeBLEInput(void) {
             break;
     }
 
+    l_linbleStateOld = l_linbleState;
+}
+
+// セントラル側の処理
+void State_runRealtimeBLECentralInput(void) {
+    static uint8_t l_linbleStateOld = LINBLE_STATE_COMMAND;
+    uint8_t l_linbleState           = LINBLE_GetState();
+    uint8_t l_strBuf[64];
+    uint8_t l_strLength;
+
+    if (l_linbleState != l_linbleStateOld) {
+        switch (l_linbleState) {
+            case LINBLE_STATE_COMMAND:
+                PrintUART((uint8_t *)"コマンド状態です。\r\n");
+                break;
+            case LINBLE_STATE_ADVERTISE:
+                PrintUART((uint8_t *)"アドバタイズ状態です。\r\n");
+                break;
+            case LINBLE_STATE_ONLINE:
+                PrintUART((uint8_t *)"オンライン状態です。\r\n");
+                break;
+            default:
+                break;
+        }
+    }
+
+    // まず、ペリフェラルと接続をしたい
+    // ① スキャン
+    // ② 接続
+    // ③
+
+    switch (l_linbleState) {
+        case LINBLE_STATE_COMMAND:
+
+            // リザルトメッセージ待機フラグが立っていたときのみ実行
+            if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
+                l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+
+                if (l_strLength > 0) {
+                    PrintUART(&l_strBuf);
+                    PrintUART("\r\n");
+
+                    if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
+                        PrintUART("read ackn\r\n");
+                        // LINBLE_SetState(LINBLE_STATE_ADVERTISE);
+                        LINBLE_SetEscapeStateFlg();
+
+                    } else {
+                        // 受信待機フラグをクリアする
+                        LINBLE_ClrReceiveResultMesgWaitFlg();
+                    }
+
+                    // エンドラインフラグをクリア
+                    LINBLE_ClrEndLineFlg();
+                    // バッファカウンタのクリア
+                    LINBLE_BufferCountClear();
+
+                } else {
+                    PrintUART("error linble run realtime ble central input state command \r\n");
+                }
+
+            } else {
+                // 何もしない
+            }
+            break;
+    }
     l_linbleStateOld = l_linbleState;
 }
 

@@ -17,6 +17,7 @@ int8_t LINBLE_SendCmdStartConnection(void);
 int8_t LINBLE_SendCmdShowVersion(void);
 int8_t LINBLE_SendCmdShowDeviceName(void);
 int8_t LINBLE_SendCmdCheckStatus(void);
+int8_t LINBLE_SendCmdScanDevice(void);
 uint8_t LINBLE_GetState(void);
 uint8_t LINBLE_SetState(uint8_t i_state);
 

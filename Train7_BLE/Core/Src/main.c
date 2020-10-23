@@ -151,7 +151,7 @@ int main(void) {
     /* USER CODE BEGIN 2 */
 
     // システム状態の初期化
-    State_Init(SYS_STATE_BLE);
+    State_Init(SYS_STATE_BLE_CENTRAL);
 
     // LINBLEの初期化
     LINBLE_Init(&huart1);
@@ -548,18 +548,24 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
         LINBLE_SetReceiveData();
 
+#ifdef MYDEBUG_UART1_RECEIVE
+
         switch (State_GetState()) {
             case SYS_STATE_BLE:
+            case SYS_STATE_BLE_CENTRAL:
+
                 // コマンドを受信した場合、ターミナルにコマンドを表示させる
                 if (LINBLE_GetReceiveCharLast() == '\n') {
                     LINBLE_GetReceiveData(&l_strBuf, 64);
                     PrintUART("uart1 Rx interrupt : ");
                     PrintUART(l_strBuf);
                 }
+
                 break;
             default:
                 break;
         }
+#endif
 
     } else if (huart == &huart2) {
         // 受信したデータを格納
@@ -568,6 +574,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
         switch (State_GetState()) {
             case SYS_STATE_DEBUG_RECIEVE:
             case SYS_STATE_BLE:
+            case SYS_STATE_BLE_CENTRAL:
                 PrintChar(UART_GetReceiveCharLast());
                 break;
             default:
