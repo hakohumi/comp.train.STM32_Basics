@@ -41,6 +41,14 @@ static bool LINBLE_EndLineFlg = false;
 // 受信待機フラグ
 static bool LINBLE_ReceiveResultMesgWaitFlg = false;
 
+typedef struct {
+    bool bti;
+    bool btc;
+} LINBLE_FLG_CMD_Type;
+
+// コマンドのフラグ監理変数
+static LINBLE_FLG_CMD_Type LINBLE_cmdFlg;
+
 // 初期化
 
 void LINBLE_Init(UART_HandleTypeDef *huart) {
@@ -83,6 +91,10 @@ void LINBLE_SetReceiveData(void) {
     }
 
     HAL_UART_Receive_IT(this_huart, &recieveBuf, 1);
+}
+
+uint8_t LINBLE_GetReceiveCountLast(void) {
+    return LINBLE_ReceiveCountLast;
 }
 
 uint8_t LINBLE_GetReceiveCharLast(void) {
@@ -155,6 +167,7 @@ uint8_t LINBLE_SetState(uint8_t i_state) {
     }
 }
 
+// エンターキーが押された時に実行される
 void LINBLE_EnterHandler(uint8_t i_sysState) {
     uint8_t l_strBuf[64];
     uint8_t l_strLength;
@@ -241,7 +254,6 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                                 LINBLE_SendCmdScanDevice();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
-
                                 break;
                             case '2':
                                 // バージョンを表示する
@@ -261,10 +273,30 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
                                 break;
+                            case '5':
+                                // 検索した1番目のデバイスに接続する
+                                LINBLE_SendCmdConnectPeripheral();
+                                // 受信待機フラグ
+                                LINBLE_ReceiveResultMesgWaitFlg = true;
+                                break;
 
                             default:
                                 break;
                         }
+                    }
+                    break;
+
+                case LINBLE_STATE_ONLINE:
+                    l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+                    if (l_strLength > 0) {
+                        if (PrintLINBLE(&l_strBuf, l_strLength) == true) {
+                            PrintUART("Send Done, to LINBLE.\r\n");
+                            // PrintUARTn(&l_strBuf, l_strLength);
+                        } else {
+                            PrintUART("Not Send, to LINBLE.\r\n");
+                        }
+                    } else {
+                        PrintUART("linble online enter error\r\n");
                     }
 
                     break;
@@ -333,6 +365,18 @@ int8_t LINBLE_SendCmdScanDevice(void) {
         PrintUART("error LINBLE_SendCmdScanDevice()\r\n");
         return -1;
     } else {
+        LINBLE_cmdFlg.bti = true;
+        return 0;
+    }
+}
+
+// セントラル側がペリフェラル側に接続する
+int8_t LINBLE_SendCmdConnectPeripheral(void) {
+    if (LINBLE_SendCmdStrToLINBLE("BTC1\r", 5) != 0) {
+        PrintUART("error LINBLE_SendCmdConnectPeripheral()\r\n");
+        return -1;
+    } else {
+        LINBLE_cmdFlg.btc = true;
         return 0;
     }
 }
@@ -355,6 +399,72 @@ int8_t LINBLE_SendCmdStrToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize) {
     } else {
         return 0;
     }
+}
+
+int8_t LINBLE_ReceiveDataBTI(uint8_t *i_strBuf, uint8_t i_bufSize) {
+    static l_btc_ack_state = false;
+
+    if (l_btc_ack_state == false) {
+        // acknを受信、次のconnに備える
+        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, "ACKN\r\n", 6) == 1) {
+            PrintUART("LINBLE_ReceiveDataBTI() read ackn\r\n");
+            l_btc_ack_state = true;
+        } else {
+        }
+    } else {
+        // TERMが来るまでリードする
+        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, "TERM\r\n", 6) != 1) {
+            PrintUART("Scan device : ");
+            PrintUART(i_strBuf);
+            PrintUART("\r\n");
+        } else {
+            PrintUART("LINBLE_ReceiveDataBTI() read TERN\r\n");
+            l_btc_ack_state   = false;
+            LINBLE_cmdFlg.bti = false;
+        }
+    }
+}
+
+// ペリフェラルへの接続要求の受信待機
+// btcフラグが立っている時の受信処理
+int8_t LINBLE_ReceiveDataBTC(uint8_t *i_strBuf, uint8_t i_bufSize) {
+    static l_btc_ack_state = false;
+
+    if (l_btc_ack_state == false) {
+        // acknを受信、次のconnに備える
+        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, "ACKN\r\n", 6) == 1) {
+            PrintUART("LINBLE_ReceiveDataBTC() read ackn\r\n");
+            l_btc_ack_state = true;
+        } else {
+        }
+    } else {
+        // connを受信、LINBLEの状態をコマンド状態から、オンライン状態へ遷移
+        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, "CONN\r\n", 6) == 1) {
+            PrintUART("ReceiveDataBTC() read conn\r\n");
+            LINBLE_SetState(LINBLE_STATE_ONLINE);
+            l_btc_ack_state   = false;
+            LINBLE_cmdFlg.btc = false;
+        } else {
+        }
+    }
+}
+
+// コマンド実行フラグの構造体のポインタを返す
+bool LINBLE_GetCmdFlg(uint8_t i_cmd) {
+    bool l_retBool = false;
+
+    switch (i_cmd) {
+        case LINBLE_FLG_CMD_BTI:
+            l_retBool = LINBLE_cmdFlg.bti;
+            break;
+        case LINBLE_FLG_CMD_BTC:
+            l_retBool = LINBLE_cmdFlg.btc;
+            break;
+        default:
+            break;
+    }
+
+    return l_retBool;
 }
 
 int8_t PrintLINBLE(uint8_t *i_str, uint8_t i_size) {

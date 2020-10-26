@@ -542,10 +542,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
         // LINBLEからの受信に関しての問題
         // 受信される文字列の終端がある場合とない場合で、PrintUARTのエラーがでる場合がある
 
+#ifdef MYDEBUG_UART1_RECEIVE
         PrintUART("huart1 Rx done. data : ");
         PrintChar(LINBLE_GetReceiveCharLast());
         PrintUART("\r\n");
-
+#endif
         LINBLE_SetReceiveData();
 
 #ifdef MYDEBUG_UART1_RECEIVE
@@ -590,9 +591,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart == &huart1) {
-        PrintUART("huart1 Tx test\r\n");
+        // PrintUART("huart1 Tx test\r\n");
     } else if (huart == &huart2) {
-        PrintUART("huart2 Tx test\r\n");
+        // PrintUART("huart2 Tx test\r\n");
     }
 }
 

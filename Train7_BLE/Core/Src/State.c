@@ -132,6 +132,7 @@ void State_RunRealtimeProcess(void) {
                 PrintUART("\"1\" : Transition to advertised state.\r\n");
                 PrintUART("\"2\" : Print LINBLE firmware version.\r\n");
                 PrintUART("\"3\" : Print LINBLE Bluetooth device address.\r\n");
+                PrintUART("\"4\" : Print LNBLE State.\r\n");
             }
 
             UART_ReceiveInput(SystemState);
@@ -147,6 +148,8 @@ void State_RunRealtimeProcess(void) {
                 PrintUART("\"1\" : Transition to advertised state.\r\n");
                 PrintUART("\"2\" : Print LINBLE firmware version.\r\n");
                 PrintUART("\"3\" : Print LINBLE Bluetooth device address.\r\n");
+                PrintUART("\"4\" : Print LNBLE State.\r\n");
+                PrintUART("\"5\" : Connect to Peripheral LINBLE.\r\n");
             }
 
             UART_ReceiveInput(SystemState);
@@ -389,7 +392,7 @@ void State_runRealtimeBLEInput(void) {
                     if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
                         PrintUART("read ackn\r\n");
                         LINBLE_SetState(LINBLE_STATE_ADVERTISE);
-                        LINBLE_SetEscapeStateFlg();
+                        // LINBLE_SetEscapeStateFlg();
 
                     } else {
                         // 受信待機フラグをクリアする
@@ -429,6 +432,7 @@ void State_runRealtimeBLEInput(void) {
                     } else if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
                         PrintUART("read ACKN in advertise\r\n");
                         // LINBLE_SetState(LINBLE_STATE_COMMAND);
+                        // LINBLE_SetEscapeStateFlg();
                     } else if (Mystring_FindStrFromEnd(l_strBuf, 64, "DISC\r\n", 6) == 1) {
                         PrintUART("read DISC in advertise\r\n");
                         LINBLE_SetState(LINBLE_STATE_COMMAND);
@@ -494,6 +498,8 @@ void State_runRealtimeBLECentralInput(void) {
     uint8_t l_linbleState           = LINBLE_GetState();
     uint8_t l_strBuf[64];
     uint8_t l_strLength;
+    uint8_t l_receiveCount;
+    static uint8_t l_receiveCountOld = 0;
 
     if (l_linbleState != l_linbleStateOld) {
         switch (l_linbleState) {
@@ -520,35 +526,82 @@ void State_runRealtimeBLECentralInput(void) {
         case LINBLE_STATE_COMMAND:
 
             // リザルトメッセージ待機フラグが立っていたときのみ実行
-            if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
+            if (LINBLE_GetEndLineFlg() == true) {
+                // if ((LINBLE_GetReceiveResultMesgWaitFlg() == true) && LINBLE_GetEndLineFlg()) == true) {
                 l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
 
-                if (l_strLength > 0) {
-                    PrintUART(&l_strBuf);
-                    PrintUART("\r\n");
+                // 何も入力されていない場合、エラー
+                if (l_strLength <= 0) {
+                    PrintUART("error linble run realtime ble central input state command \r\n");
+                } else {
+                    // ここから、コマンド実行フラグを元にして、
+                    // それぞれの処理をしたい
 
-                    if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
-                        PrintUART("read ackn\r\n");
-                        // LINBLE_SetState(LINBLE_STATE_ADVERTISE);
-                        LINBLE_SetEscapeStateFlg();
+                    // 現在の問題
+                    // コマンドによって、同じメッセージを返してくる ACKNなど
+                    // レシーブメッセージごとに処理を分けるのではなく、コマンドごとに分けたほうが良い
+                    // そこで、コマンドごとにフラグを作成し、コマンド送信時にフラグを立てて、立ったフラグごとにレシーブメッセージを受信する
 
+                    // BTIコマンドを実行した時の処理
+                    if (LINBLE_GetCmdFlg(LINBLE_FLG_CMD_BTI) == true) {
+                        LINBLE_ReceiveDataBTI(&l_strBuf, l_strLength);
+                    } else if (LINBLE_GetCmdFlg(LINBLE_FLG_CMD_BTC) == true) {  // BTCコマンドを実行した時の処理
+                        LINBLE_ReceiveDataBTC(&l_strBuf, l_strLength);
                     } else {
-                        // 受信待機フラグをクリアする
-                        LINBLE_ClrReceiveResultMesgWaitFlg();
+                        // LINBLEから受取ったデータをコンソールへ出力
+                        PrintUART("Receive LINBLE data : ");
+                        PrintUART(&l_strBuf);
+                        PrintUART("\r\n");
                     }
+
+                    // 受信待機フラグをクリアする
+                    LINBLE_ClrReceiveResultMesgWaitFlg();
+
+                    // LINBLE_SetEscapeStateFlg();
 
                     // エンドラインフラグをクリア
                     LINBLE_ClrEndLineFlg();
                     // バッファカウンタのクリア
                     LINBLE_BufferCountClear();
-
-                } else {
-                    PrintUART("error linble run realtime ble central input state command \r\n");
                 }
 
             } else {
                 // 何もしない
             }
+            break;
+        case LINBLE_STATE_ONLINE:
+            l_receiveCount = LINBLE_GetReceiveCountLast();
+            // リザルトメッセージ待機フラグが立っていたときのみ実行
+            if (l_receiveCount != l_receiveCountOld) {
+                // if ((LINBLE_GetReceiveResultMesgWaitFlg() == true) && LINBLE_GetEndLineFlg()) == true) {
+                l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+
+                // 何も入力されていない場合、エラー
+                if (l_strLength <= 0) {
+                    PrintUART("error linble run realtime ble central input state online \r\n");
+                } else {
+                    // LINBLEから受取ったデータをコンソールへ出力
+                    PrintUART("Receive LINBLE data : ");
+                    PrintUART(&l_strBuf);
+                    PrintUART("\r\n");
+
+                    // 受信待機フラグをクリアする
+                    LINBLE_ClrReceiveResultMesgWaitFlg();
+
+                    // LINBLE_SetEscapeStateFlg();
+
+                    // エンドラインフラグをクリア
+                    LINBLE_ClrEndLineFlg();
+                    // バッファカウンタのクリア
+                    LINBLE_BufferCountClear();
+                }
+            } else {
+                // 何もしない
+            }
+            l_receiveCountOld = l_receiveCount;
+            break;
+        default:
+            PrintUART("can't\r\n");
             break;
     }
     l_linbleStateOld = l_linbleState;
