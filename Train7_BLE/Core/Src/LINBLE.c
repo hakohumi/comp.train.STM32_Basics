@@ -135,7 +135,7 @@ uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
 
     *o_strAddr = '\0';
 
-#ifdef MYDEBUG
+#ifdef MYDEBUG_LINBLE_GETRECEIVEDATA
     PrintUART(o_strAddr);
     PrintUART("\r\n");
 #endif

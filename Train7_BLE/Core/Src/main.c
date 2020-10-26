@@ -581,11 +581,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
             default:
                 break;
         }
-
-#ifdef MYDEBUG
-            // PrintUART("huart2 Rx test, read data : ");
-            // PrintUARTInt(UART_GetReceiveCharLast());
-#endif
     }
 }
 

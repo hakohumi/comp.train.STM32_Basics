@@ -30,7 +30,7 @@ static uint8_t UART_ReceiveData1[UART_RECEIVE_BUF];
 // static uint8_t UART_ReceiveData2[UART_RECEIVE_BUF];
 
 // 最後の文字のバッファ
-static uint8_t UART_ReceiveCharLast;
+static uint8_t UART_ReceiveCharLast = 0;
 
 // バッファの使用先
 // static uint8_t UART_ReceiveDataIdx = 0;
@@ -63,52 +63,53 @@ void UART_SetReceiveData(void) {
 
     // バッファからデータを取り出していない間、受信を受け付けない
     // エンターを押された時
-    if (UART_ReceiveLockFlg == false) {
-        if (i_data == '\r' || i_data == '\n') {
-            UART_ReceiveEnterFlg = true;
+    // if (UART_ReceiveLockFlg == false) {
+    if (i_data == '\n') {
+        // if (i_data == '\r' || i_data == '\n') {
+        UART_ReceiveEnterFlg = true;
 
-            UART_ReceiveLockFlg = true;
-            // i_data              = '\0';
-            UART_State = UART_STATE_PUSHED_ENTER;
-        }
-
-        // 受信したデータを格納
-        UART_ReceiveData1[UART_ReceiveCount] = i_data;
-
-        // 前回の位置を記録
-        UART_ReceiveCountLast = UART_ReceiveCount;
-
-        // 入力桁数を増加
-        UART_ReceiveCount++;
-
-        // 入力がバッファを超えたら、
-        if (UART_ReceiveCount >= UART_RECEIVE_BUF - 1) {
-            // バッファオーバーフラグを立てる
-            UART_ReceiveCountOverFlowFlg = true;
-
-            // 最後に終端文字を入れる
-            UART_ReceiveData1[UART_RECEIVE_BUF - 1] = '\0';
-
-            // バッファを最初からにする
-            UART_ReceiveCount = 0;
-        }
-
-        if (UART_ReceiveEnterFlg == true) {
-            UART_ReceiveEnterFlg                 = false;
-            UART_ReceiveData1[UART_ReceiveCount] = '\0';
-            UART_ReceiveCount                    = 0;
-        }
-
-        // バッファの最初に戻ったかどうか
-        if (UART_ReceiveEnterFlg || UART_ReceiveCountOverFlowFlg) {
-            // バッファの終わりフラグを立てる
-            UART_ReceiveBufEndFlg = true;
-            // 1行受信フラグ ON
-            UART_ReceiveLineFlg = true;
-        }
-
-        UART_ReceiveFlg = true;
+        // UART_ReceiveLockFlg = true;
+        // i_data              = '\0';
+        UART_State = UART_STATE_PUSHED_ENTER;
     }
+
+    // 受信したデータを格納
+    UART_ReceiveData1[UART_ReceiveCount] = i_data;
+
+    // 前回の位置を記録
+    UART_ReceiveCountLast = UART_ReceiveCount;
+
+    // 入力桁数を増加
+    UART_ReceiveCount++;
+
+    // 入力がバッファを超えたら、
+    if (UART_ReceiveCount >= UART_RECEIVE_BUF - 1) {
+        // バッファオーバーフラグを立てる
+        UART_ReceiveCountOverFlowFlg = true;
+
+        // 最後に終端文字を入れる
+        UART_ReceiveData1[UART_RECEIVE_BUF - 1] = '\0';
+
+        // バッファを最初からにする
+        UART_ReceiveCount = 0;
+    }
+
+    if (UART_ReceiveEnterFlg == true) {
+        UART_ReceiveEnterFlg                 = false;
+        UART_ReceiveData1[UART_ReceiveCount] = '\0';
+        UART_ReceiveCount                    = 0;
+    }
+
+    // バッファの最初に戻ったかどうか
+    if (UART_ReceiveEnterFlg || UART_ReceiveCountOverFlowFlg) {
+        // バッファの終わりフラグを立てる
+        UART_ReceiveBufEndFlg = true;
+        // 1行受信フラグ ON
+        UART_ReceiveLineFlg = true;
+    }
+
+    UART_ReceiveFlg = true;
+    // }
     HAL_UART_Receive_IT(this_huart, &UART_ReceiveCharLast, 1);
 }
 // 新入力処理
@@ -136,15 +137,19 @@ uint8_t UART_ReceiveInput(uint8_t i_sysState) {
         // とりあえず、Enter押したら、1行が表示されるようにする
         // 前提：メインでずっと処理される
 
-        // バッファビジーフラグが立っていたら
-        if (UART_ReceiveLockFlg == true) {
+        if (UART_ReceiveFlg == true) {
+            // 入力を表示
+            // PrintChar(UART_GetReceiveCharLast());
+
+            // バッファビジーフラグが立っていたら
+            // if (UART_ReceiveLockFlg == true) {
             // エンターが押された時の処理
             if (UART_State == UART_STATE_PUSHED_ENTER) {
 #ifdef MYDEBUG_UART_RECEIVEINPUT
                 UART_GetReceiveData(&l_buf, UART_RECEIVE_BUF);
                 PrintUART("DEBUG:UART_ReceiveInput() : ");
                 PrintUART(l_buf);
-                PrintUART("\r\n");
+                // PrintUART("\r\n");
 #endif
 
                 UART_enterHundler(i_sysState);
@@ -153,7 +158,10 @@ uint8_t UART_ReceiveInput(uint8_t i_sysState) {
                 UART_State = UART_STATE_NONPUSHED;
             }
 
-            UART_ReceiveLockFlg = false;
+            // UART_ReceiveLockFlg = false;
+            // }
+
+            UART_ReceiveFlg = false;
         }
     }
 
