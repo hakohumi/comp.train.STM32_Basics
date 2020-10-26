@@ -291,7 +291,7 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                     if (l_strLength > 0) {
                         if (PrintLINBLE(&l_strBuf, l_strLength) == true) {
                             PrintUART("Send Done, to LINBLE.\r\n");
-                            // PrintUARTn(&l_strBuf, l_strLength);
+                            PrintUARTn(&l_strBuf, l_strLength);
                         } else {
                             PrintUART("Not Send, to LINBLE.\r\n");
                         }

@@ -572,9 +572,12 @@ void State_runRealtimeBLECentralInput(void) {
         case LINBLE_STATE_ONLINE:
             l_receiveCount = LINBLE_GetReceiveCountLast();
             // リザルトメッセージ待機フラグが立っていたときのみ実行
-            if (l_receiveCount != l_receiveCountOld) {
-                // if ((LINBLE_GetReceiveResultMesgWaitFlg() == true) && LINBLE_GetEndLineFlg()) == true) {
+            // if (l_receiveCount != l_receiveCountOld) {
+            if ((LINBLE_GetEndLineFlg()) == true) {
+                // l_strLength = 1;
                 l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+                // l_strBuf[0] = LINBLE_GetReceiveCharLast();
+                // l_strBuf[1] = '\0';
 
                 // 何も入力されていない場合、エラー
                 if (l_strLength <= 0) {
