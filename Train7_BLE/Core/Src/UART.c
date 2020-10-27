@@ -41,7 +41,6 @@ static bool UART_ReceiveLockFlg = false;
 static uint8_t UART_ReceiveCount;
 // 最後のカウント
 static uint8_t UART_ReceiveCountLast;
-static bool UART_ReceiveCountOverFlowFlg = false;
 
 static UART_HandleTypeDef *this_huart;
 
@@ -51,67 +50,163 @@ static uint8_t UART_State = UART_STATE_NONPUSHED;
 // 受信フラグ
 bool UART_ReceiveLineFlg = false;
 bool UART_ReceiveFlg     = false;
-// Enterフラグ
-bool UART_ReceiveEnterFlg = false;
 
 // バッファが最初に戻ったフラグ
 bool UART_ReceiveBufEndFlg = false;
 
+// terattermからの受信
+// キー入力による文字列が入力される
+// エンターが環境によって違う
+// CRもLFもCR + LFもどれもCR + LFにする
+// CRかLFを受信した場合、CR + LFに直す
 // 受信したデータを格納する
 void UART_SetReceiveData(void) {
-    uint8_t i_data = UART_ReceiveCharLast;
+    // Enterフラグ
+    // SetReceiveData()内のフラグ
+    bool l_receiveEnterFlg = false;
+    // バッファオーバーフローフラグ
+    bool l_receiveCountOverFlowFlg = false;
 
-    // バッファからデータを取り出していない間、受信を受け付けない
-    // エンターを押された時
-    // if (UART_ReceiveLockFlg == false) {
-    if (i_data == '\n') {
-        // if (i_data == '\r' || i_data == '\n') {
-        UART_ReceiveEnterFlg = true;
+    uint8_t i_data    = UART_ReceiveCharLast;
+    static bool CRFlg = false;
+    // LFフラグ
+    bool l_LFFlg = false;
 
-        // UART_ReceiveLockFlg = true;
-        // i_data              = '\0';
-        UART_State = UART_STATE_PUSHED_ENTER;
+#define MYDEBUG_UART_SETRECEIVEDATA
+#ifdef MYDEBUG_UART_SETRECEIVEDATA
+
+    // 改行コードの判定
+
+    // CRのみの時
+    // ① CRかどうか比較して、trueならLFを追加する
+    // ② この時にすでに改行したことにし、次のLFの入力があった場合、無効にする
+
+    // LFのみの時
+    // ③ CRがなかった場合、LFかどうかを比較して、trueなら終端を追加する
+    // falseなら、そのまま受信データをバッファに格納する
+
+    // CRが来た後、次の1バイトがLFかどうかが知りたい
+    // trueならスルー
+    // falseならそのまま
+
+    // CRフラグ 検知前
+    if (CRFlg == false) {
+        if (i_data == '\r') {
+            // 次にLFが来てもスルーする用にCRフラグを立てる
+            CRFlg = true;
+        }
+
+        if ((CRFlg == true) || (i_data == '\n')) {
+            // 現在の位置にCRを追加
+            // receiveCount
+            // バッファの最後
+            // UART_ReceiveData1[61] = '\r'
+            UART_ReceiveData1[UART_ReceiveCount] = '\r';
+
+            // UART_ReceiveCount = 62
+            UART_ReceiveCount++;
+
+            // 次の位置にLFを追加
+            // receiveCount + 1
+            // UART_ReceiveData1[62] = '\n'
+            UART_ReceiveData1[UART_ReceiveCount] = '\n';
+
+            // UART_ReceiveCount = 63
+            UART_ReceiveCount++;
+
+            // そのさらに次の位置に終端を追加
+            // receiveCoun + 2
+            UART_ReceiveData1[UART_ReceiveCount] = '\0';
+
+            l_receiveEnterFlg = true;
+        }
+
+    } else {  // CRフラグ 検知後 CRの次のバイト
+
+        // CRの次にLFが来た場合
+        if (i_data == '\n') {
+            // 今回の割込みは全スルーする
+            // CRフラグを下げる
+
+            PrintUART("2文字目のLFはスルーしたよ！\r\n");
+            UART_ReceiveCharLast = '\r';
+            l_LFFlg              = true;
+        } else {
+            if (i_data == '\r') {
+                UART_ReceiveData1[UART_ReceiveCount] = '\r';
+
+                // UART_ReceiveCount = 62
+                UART_ReceiveCount++;
+                l_receiveEnterFlg = true;
+            }
+        }
+
+        // CRフラグを下げる
+        CRFlg = false;
     }
 
-    // 受信したデータを格納
-    UART_ReceiveData1[UART_ReceiveCount] = i_data;
+#endif
 
-    // 前回の位置を記録
-    UART_ReceiveCountLast = UART_ReceiveCount;
+    if (l_LFFlg == false) {
+        // 入力が改行ではない場合
+        if (l_receiveEnterFlg == false) {
+            // 受信したデータを格納
+            UART_ReceiveData1[UART_ReceiveCount] = i_data;
+        }
 
-    // 入力桁数を増加
-    UART_ReceiveCount++;
+        // 前回の位置を記録
+        UART_ReceiveCountLast = UART_ReceiveCount;
 
-    // 入力がバッファを超えたら、
-    if (UART_ReceiveCount >= UART_RECEIVE_BUF - 1) {
-        // バッファオーバーフラグを立てる
-        UART_ReceiveCountOverFlowFlg = true;
+        // 入力桁数を増加
+        UART_ReceiveCount++;
 
-        // 最後に終端文字を入れる
-        UART_ReceiveData1[UART_RECEIVE_BUF - 1] = '\0';
+        // 入力がバッファを超えたら、
+        // BufSize = 64
+        // buf[63] = '\0'
+        // buf[62] = '\n'
+        // buf[61] = '\r'
 
-        // バッファを最初からにする
-        UART_ReceiveCount = 0;
+        // 62 になったら、バッファを最初からにする。
+        if (UART_ReceiveCount >= UART_RECEIVE_BUF - 2) {
+            // バッファオーバーフラグを立てる
+            l_receiveCountOverFlowFlg = true;
+
+            // 最後に終端文字を入れる
+            // UART_ReceiveData1[62] = '\0'
+            UART_ReceiveData1[UART_ReceiveCount] = '\0';
+            // UART_ReceiveData1[63] = '\0'
+            UART_ReceiveData1[UART_ReceiveCount + 1] = '\0';
+
+            // バッファを最初からにする
+            UART_ReceiveCount = 0;
+        }
+
+        // バッファの最初に戻ったかどうか
+        if (l_receiveEnterFlg || l_receiveCountOverFlowFlg) {
+            // バッファの終わりフラグを立てる
+            UART_ReceiveBufEndFlg = true;
+            // 1行受信フラグ ON
+            UART_ReceiveLineFlg = true;
+        }
+
+        // エンターでバッファが最初からに戻る処理
+        //状態もEnterが押された状態へ遷移する
+        if (l_receiveEnterFlg == true) {
+            UART_State = UART_STATE_PUSHED_ENTER;
+            // UART_ReceiveData1[UART_ReceiveCount] = '\0';
+            UART_ReceiveCount = 0;
+        }
+
+        UART_ReceiveFlg = true;
     }
+}
 
-    if (UART_ReceiveEnterFlg == true) {
-        UART_ReceiveEnterFlg                 = false;
-        UART_ReceiveData1[UART_ReceiveCount] = '\0';
-        UART_ReceiveCount                    = 0;
-    }
-
-    // バッファの最初に戻ったかどうか
-    if (UART_ReceiveEnterFlg || UART_ReceiveCountOverFlowFlg) {
-        // バッファの終わりフラグを立てる
-        UART_ReceiveBufEndFlg = true;
-        // 1行受信フラグ ON
-        UART_ReceiveLineFlg = true;
-    }
-
-    UART_ReceiveFlg = true;
-    // }
+// 割込みの再設定
+// mainの受信割込みで呼ばれる
+void UART_ReloadReceiveInterrupt(void) {
     HAL_UART_Receive_IT(this_huart, &UART_ReceiveCharLast, 1);
 }
+
 // 新入力処理
 uint8_t UART_ReceiveInput(uint8_t i_sysState) {
     bool l_do_flg = false;
@@ -138,18 +233,19 @@ uint8_t UART_ReceiveInput(uint8_t i_sysState) {
         // 前提：メインでずっと処理される
 
         if (UART_ReceiveFlg == true) {
-            // 入力を表示
-            // PrintChar(UART_GetReceiveCharLast());
+            if (UART_State == UART_STATE_NONPUSHED) {
+                // 入力を表示
+                PrintChar(UART_GetReceiveCharLast());
 
-            // バッファビジーフラグが立っていたら
-            // if (UART_ReceiveLockFlg == true) {
-            // エンターが押された時の処理
-            if (UART_State == UART_STATE_PUSHED_ENTER) {
+            } else if (UART_State == UART_STATE_PUSHED_ENTER) {  // エンターが押された時の処理
+                // Enterを押したら、改行させる
+                PrintUART("\r\n");
+
+// #define MYDEBUG_UART_RECEIVEINPUT
 #ifdef MYDEBUG_UART_RECEIVEINPUT
                 UART_GetReceiveData(&l_buf, UART_RECEIVE_BUF);
                 PrintUART("DEBUG:UART_ReceiveInput() : ");
                 PrintUART(l_buf);
-                // PrintUART("\r\n");
 #endif
 
                 UART_enterHundler(i_sysState);
@@ -157,9 +253,6 @@ uint8_t UART_ReceiveInput(uint8_t i_sysState) {
 
                 UART_State = UART_STATE_NONPUSHED;
             }
-
-            // UART_ReceiveLockFlg = false;
-            // }
 
             UART_ReceiveFlg = false;
         }
@@ -207,7 +300,8 @@ uint8_t UART_GetReceiveCharLast(void) {
 
 // バッファに入っているデータを取得する
 uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
-    uint8_t i = 0;
+    uint8_t i            = 0;
+    uint8_t l_CRLFEOFNum = 0;
 
     // バッファサイズより大きい場合の例外
     if (UART_ReceiveCountLast > i_bufSize) {
@@ -217,11 +311,19 @@ uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
 
     while (i <= UART_ReceiveCountLast && i < i_bufSize) {
         *o_strAddr = UART_ReceiveData1[i];
+        // 改行、終端文字の場合は、カウントしない
+        if (*o_strAddr == '\r' || *o_strAddr == '\n' || *o_strAddr == '\0') {
+            l_CRLFEOFNum++;
+        }
+
+#ifdef MYDEBUG_UART_GETRECEIVEDATA
+        PrintChar(*o_strAddr);
+#endif
         i++;
         o_strAddr++;
     }
 
-    return i;
+    return i - l_CRLFEOFNum;
 }
 
 // エンターが押された時の処理
@@ -314,16 +416,24 @@ int8_t PrintUART(uint8_t *i_str) {
 
     // 終端文字か改行文字を見つけるまで かつ バッファ分まで
     l_strLength = MyString_FindEOL(i_str, BUF_STR_SIZE);
-    if (l_strLength == 0) {
+    if (l_strLength < 0) {
         l_strLength = MyString_FindLF(i_str, BUF_STR_SIZE);
-        if (l_strLength == 0) {
+        if (l_strLength < 0) {
             l_strLength = MyString_FindCR(i_str, BUF_STR_SIZE);
-            if (l_strLength == 0) {
+            if (l_strLength < 0) {
                 PrintERROR(ERROR_UART_PRINTUART_ENDOFLINE);
                 return -1;
             }
+        } else if (l_strLength == 0) {
+            PrintUART("LFが1文字目です。\r\n");
+            // return -1;
         }
+    } else if (l_strLength == 0) {
+        PrintUART("終端文字が1文字目です。\r\n");
+        // return -1;
     }
+
+    l_strLength++;
 
     /* -------------------------------------*/
 
@@ -367,7 +477,7 @@ int8_t PrintUARTn(uint8_t *i_str, uint8_t i_size) {
 }
 
 uint8_t PrintChar(uint8_t i_char) {
-    int status;
+    int status = HAL_ERROR;
     uint8_t l_buf[2];
 
     l_buf[0] = i_char;
@@ -377,6 +487,8 @@ uint8_t PrintChar(uint8_t i_char) {
         status = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
     } else if (i_char == '\r' || i_char == '\n') {
         status = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
+    } else if (i_char == '\0') {
+        status = HAL_OK;
     } else {
         l_buf[0] = '.';
         status   = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);

@@ -124,8 +124,8 @@ int8_t MyString_Atoi(uint32_t *o_value, uint8_t *InputBufArray, uint8_t i_strlen
 /* -------------------------------------------------- */
 
 int8_t MyString_findChara(uint8_t *i_str, uint8_t i_bufsize, uint8_t i_chara) {
-    uint8_t *l_ptr = i_str;
-    uint8_t l_strlength;
+    uint8_t *l_ptr      = i_str;
+    uint8_t l_strlength = 0;
 
     // 指定した文字を見つけるまで かつ バッファ分まで
     for (l_strlength = 0; *l_ptr != i_chara && l_strlength < i_bufsize;

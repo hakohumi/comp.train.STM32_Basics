@@ -22,6 +22,8 @@ int8_t LINBLE_SendCmdConnectPeripheral(void);
 uint8_t LINBLE_GetState(void);
 uint8_t LINBLE_SetState(uint8_t i_state);
 
+void LINBLE_ReloadReceiveInterrupt(void);
+
 // リザルトメッセージ待機フラグ
 bool LINBLE_GetReceiveResultMesgWaitFlg(void);
 void LINBLE_ClrReceiveResultMesgWaitFlg(void);

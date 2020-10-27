@@ -16,6 +16,7 @@ void UART_Console_Init(UART_HandleTypeDef *huart);
 
 void UART_SetReceiveData(void);
 uint8_t UART_GetReceiveCharLast(void);
+void UART_ReloadReceiveInterrupt(void);
 
 void UART_ReceiveCountUp(void);
 

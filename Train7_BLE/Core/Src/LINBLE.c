@@ -89,7 +89,10 @@ void LINBLE_SetReceiveData(void) {
         // バッファを最初からにする
         LINBLE_ReceiveCount = 0;
     }
+}
 
+// mainの受信割込みで呼ばれる
+void LINBLE_ReloadReceiveInterrupt(void) {
     HAL_UART_Receive_IT(this_huart, &recieveBuf, 1);
 }
 
@@ -182,7 +185,7 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                     // BTA<CR>コマンドを送信する
 
                     l_strLength = UART_GetReceiveData(&l_strBuf, 64);
-                    if (l_strLength == 2) {
+                    if (l_strLength > 0) {
                         switch (l_strBuf[0]) {
                             case '1':
                                 PrintUART("pushed 1, Start connection.\r\n");
@@ -211,8 +214,11 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                                 break;
 
                             default:
+                                PrintUART("not commmand.");
                                 break;
                         }
+                    } else {
+                        PrintUART("error BLE LINBLE ENTER HANDER\r\n")
                     }
 
                     break;
@@ -232,7 +238,7 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                             PrintUART("Not Send, to LINBLE.\r\n");
                         }
                     } else {
-                        PrintUART("linble online enter error\r\n");
+                        PrintUART("BLE linble online enter error\r\n");
                     }
 
                     break;
@@ -247,7 +253,15 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
             switch (LINBLEStatus) {
                 case LINBLE_STATE_COMMAND:
                     l_strLength = UART_GetReceiveData(&l_strBuf, 64);
-                    if (l_strLength == 2) {
+
+// #define MYDEBUG_LINBLE_CENTRAL_ENTER
+#ifdef MYDEBUG_LINBLE_CENTRAL_ENTER
+                    PrintUART("debug : UART_GetReceiveData() :");
+                    PrintUARTInt(l_strLength);
+                    PrintUART("\r\n");
+#endif
+
+                    if (l_strLength > 0) {
                         switch (l_strBuf[0]) {
                             case '1':
                                 PrintUART("pushed 1, Start scan around.\r\n");
@@ -281,8 +295,11 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                                 break;
 
                             default:
+                                PrintUART("not Command.\r\n");
                                 break;
                         }
+                    } else {
+                        PrintUART("BLE Central command string 0 error.\r\n");
                     }
                     break;
 
