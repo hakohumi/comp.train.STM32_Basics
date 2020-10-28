@@ -312,7 +312,8 @@ uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
     while (i <= UART_ReceiveCountLast && i < i_bufSize) {
         *o_strAddr = UART_ReceiveData1[i];
         // 改行、終端文字の場合は、カウントしない
-        if (*o_strAddr == '\r' || *o_strAddr == '\n' || *o_strAddr == '\0') {
+        // if (*o_strAddr == '\r' || *o_strAddr == '\n' || *o_strAddr == '\0') {
+        if (*o_strAddr == '\0') {
             l_CRLFEOFNum++;
         }
 

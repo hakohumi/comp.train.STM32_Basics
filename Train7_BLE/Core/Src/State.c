@@ -461,7 +461,8 @@ void State_runRealtimeBLEInput(void) {
                 // 文字が送られて来た時
                 uint8_t l_unreadCount = LINBLE_GetReceiveDataUnReadCount();
                 if (l_unreadCount > 0) {
-                    PrintUARTInt(l_unreadCount);
+                    // 未読バッファ数
+                    // PrintUARTInt(l_unreadCount);
                     l_strLength = LINBLE_GetReceiveDataLast(&l_strBuf, l_unreadCount + 1);
                     if (l_strLength > 0) {
                         PrintUART("Receive Data : ");
