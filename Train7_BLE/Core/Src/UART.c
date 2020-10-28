@@ -35,8 +35,6 @@ static uint8_t UART_ReceiveCharLast = 0;
 // バッファの使用先
 // static uint8_t UART_ReceiveDataIdx = 0;
 
-static bool UART_ReceiveLockFlg = false;
-
 // 入力された1行の文字数
 static uint8_t UART_ReceiveCount;
 // 最後のカウント
@@ -128,7 +126,7 @@ void UART_SetReceiveData(void) {
             // 今回の割込みは全スルーする
             // CRフラグを下げる
 
-            PrintUART("2文字目のLFはスルーしたよ！\r\n");
+            PrintUART((uint8_t *)"2文字目のLFはスルーしたよ！\r\n");
             UART_ReceiveCharLast = '\r';
             l_LFFlg              = true;
         } else {
@@ -239,12 +237,12 @@ uint8_t UART_ReceiveInput(uint8_t i_sysState) {
 
             } else if (UART_State == UART_STATE_PUSHED_ENTER) {  // エンターが押された時の処理
                 // Enterを押したら、改行させる
-                PrintUART("\r\n");
+                PrintUART((uint8_t *)"\r\n");
 
 // #define MYDEBUG_UART_RECEIVEINPUT
 #ifdef MYDEBUG_UART_RECEIVEINPUT
                 UART_GetReceiveData(&l_buf, UART_RECEIVE_BUF);
-                PrintUART("DEBUG:UART_ReceiveInput() : ");
+                PrintUART((uint8_t *)"DEBUG:UART_ReceiveInput() : ");
                 PrintUART(l_buf);
 #endif
 
@@ -305,7 +303,7 @@ uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
 
     // バッファサイズより大きい場合の例外
     if (UART_ReceiveCountLast > i_bufSize) {
-        PrintUART("error uart getreceivedata \r\n");
+        PrintUART((uint8_t *)"error uart getreceivedata \r\n");
         return 0;
     }
 
@@ -373,7 +371,7 @@ void UART_RunMemDump(void) {
 
     // 文字列を16進数に変換
     l_status = MyString_Atoi(&l_value, l_strBuf, l_strLength);
-    dprintUART("MyString_Atoi : ", l_value);
+    dprintUART((uint8_t *)"MyString_Atoi : ", l_value);
 
     // 1要素目（開始アドレスの指定）
     if (ls_EnterNum == 0) {
@@ -426,11 +424,11 @@ int8_t PrintUART(uint8_t *i_str) {
                 return -1;
             }
         } else if (l_strLength == 0) {
-            PrintUART("LFが1文字目です。\r\n");
+            PrintUART((uint8_t *)"LFが1文字目です。\r\n");
             // return -1;
         }
     } else if (l_strLength == 0) {
-        PrintUART("終端文字が1文字目です。\r\n");
+        PrintUART((uint8_t *)"終端文字が1文字目です。\r\n");
         // return -1;
     }
 
@@ -541,41 +539,41 @@ bool printUARTHex(uint8_t *i_str, uint32_t i_var, uint8_t i_len) {
 void PrintERROR(uint8_t i_errorCode) {
     switch (i_errorCode) {
         case ERROR_INPUT_OVERLENGTH:
-            PrintUART("ERROR INPUT OVERLENGTH\r\n");
+            PrintUART((uint8_t *)"ERROR INPUT OVERLENGTH\r\n");
             break;
         case ERROR_INPUT_SHORTLENGTH:
-            PrintUART("ERROR_INPUT_SHORTLENGTH\r\n");
+            PrintUART((uint8_t *)"ERROR_INPUT_SHORTLENGTH\r\n");
             break;
         case ERROR_INPUT_CONTROL_CODE:
-            PrintUART("ERROR_INPUT_CONTROL_CODE\r\n");
+            PrintUART((uint8_t *)"ERROR_INPUT_CONTROL_CODE\r\n");
             break;
         case ERROR_INPUT_ALPHANUMERIC:
-            PrintUART("ERROR_INPUT_ALPHANUMERIC\r\n");
+            PrintUART((uint8_t *)"ERROR_INPUT_ALPHANUMERIC\r\n");
             break;
         case ERROR_INPUT_HEX:
-            PrintUART("ERROR_INPUT_HEX\r\n");
+            PrintUART((uint8_t *)"ERROR_INPUT_HEX\r\n");
             break;
         case ERROR_UART_PRINTUART_ENDOFLINE:
-            PrintUART("ERROR_UART_PRINTUART_ENDOFLINE\r\n");
+            PrintUART((uint8_t *)"ERROR_UART_PRINTUART_ENDOFLINE\r\n");
             break;
         case ERROR_LINBLE_SENDFAILURE:
-            PrintUART("ERROR_LINBLE_SENDFAILURE\r\n");
+            PrintUART((uint8_t *)"ERROR_LINBLE_SENDFAILURE\r\n");
             break;
         case ERROR_LINBLE_NOTFIND_ENDOFLINE:
-            PrintUART("ERROR_LINBLE_NOTFIND_ENDOFLINE\r\n");
+            PrintUART((uint8_t *)"ERROR_LINBLE_NOTFIND_ENDOFLINE\r\n");
             break;
         case ERROR_LINBLE_NOTFIND_CR:
-            PrintUART("ERROR_LINBLE_NOTFIND_CR\r\n");
+            PrintUART((uint8_t *)"ERROR_LINBLE_NOTFIND_CR\r\n");
             break;
         case ERROR_MYSTRINGFUNC_NOTFIND_ENDOFLINE:
-            PrintUART("ERROR_MYSTRINGFUNC_NOTFIND_ENDOFLINE\r\n");
+            PrintUART((uint8_t *)"ERROR_MYSTRINGFUNC_NOTFIND_ENDOFLINE\r\n");
             break;
         case ERROR_LINBLE_RECIEVEFAILURE:
-            PrintUART("ERROR_LINBLE_RECIEVEFAILURE\r\n");
+            PrintUART((uint8_t *)"ERROR_LINBLE_RECIEVEFAILURE\r\n");
             break;
 
         default:
-            PrintUART("Unregistered error\r\n");
+            PrintUART((uint8_t *)"Unregistered error\r\n");
             break;
     }
 }

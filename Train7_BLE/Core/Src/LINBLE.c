@@ -104,8 +104,9 @@ uint8_t LINBLE_GetReceiveDataUnReadCount(void) {
 int8_t LINBLE_DecReceiveDataUnReadCount(void) {
     if (LINBLE_ReceiveDataUnReadCount > 0) {
         LINBLE_ReceiveDataUnReadCount--;
+        return 0;
     } else {
-        PrintUART("LINBLE DecReceiveDataUnReadCount() error\r\n");
+        PrintUART((uint8_t *)"LINBLE DecReceiveDataUnReadCount() error\r\n");
         return -1;
     }
 }
@@ -135,7 +136,7 @@ uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
 
     // バッファサイズより大きい場合の例外
     // if (LINBLE_ReceiveCountLast > i_bufSize - 1) {
-    // PrintUART("error データがバッファに入らない\r\n");
+    // PrintUART((uint8_t *)"error データがバッファに入らない\r\n");
     // return 0;
     // }
 
@@ -150,7 +151,7 @@ uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
 
 #ifdef MYDEBUG_LINBLE_GETRECEIVEDATA
     PrintUART(o_strAddr);
-    PrintUART("\r\n");
+    PrintUART((uint8_t *)"\r\n");
 #endif
 
     return i;
@@ -208,10 +209,12 @@ uint8_t LINBLE_SetState(uint8_t i_state) {
             LINBLEStatus = i_state;
             break;
         default:
-            PrintUART("error linble setstate\r\n");
+            PrintUART((uint8_t *)"error linble setstate\r\n");
             LINBLEStatus = 0xFF;
+            return 1;
             break;
     }
+    return 0;
 }
 
 // エンターキーが押された時に実行される
@@ -222,17 +225,20 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
     switch (i_sysState) {
         case SYS_STATE_BLE:
 
+            /* -------------------------------------------------- */
             switch (LINBLEStatus) {
+                /* -------------------------------------------------- */
                 case LINBLE_STATE_COMMAND:
 
                     // コマンド状態から、アドバタイズ状態へ遷移させる
                     // BTA<CR>コマンドを送信する
 
-                    l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+                    l_strLength = UART_GetReceiveData((uint8_t *)&l_strBuf, 64);
                     if (l_strLength > 0) {
+                        /* -------------------------------------------------- */
                         switch (l_strBuf[0]) {
                             case '1':
-                                PrintUART("pushed 1. Try Start connection.\r\n");
+                                PrintUART((uint8_t *)"pushed 1. Try Start connection.\r\n");
                                 LINBLE_SendCmdStartConnection();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
@@ -258,120 +264,140 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                                 break;
 
                             default:
-                                PrintUART("not commmand.\r\n");
+                                PrintUART((uint8_t *)"not commmand.\r\n");
                                 break;
                         }
+                        /* -------------------------------------------------- */
                     } else {
-                        PrintUART("error BLE LINBLE ENTER HANDLER\r\n");
+                        PrintUART((uint8_t *)"error BLE LINBLE ENTER HANDLER\r\n");
                     }
 
                     break;
-
+                    /* -------------------------------------------------- */
                 case LINBLE_STATE_ADVERTISE:
 
                     break;
-
+                    /* -------------------------------------------------- */
                 case LINBLE_STATE_ONLINE:
 
-                    l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+                    l_strLength = UART_GetReceiveData((uint8_t *)&l_strBuf, 64);
                     if (l_strLength > 0) {
-                        if (PrintLINBLE(&l_strBuf, l_strLength) == true) {
-                            PrintUART("Send Done, to LINBLE.\r\n");
+                        if (PrintLINBLE((uint8_t *)&l_strBuf, l_strLength) == true) {
+                            PrintUART((uint8_t *)"Send Done, to LINBLE.\r\n");
                             // PrintUARTn(&l_strBuf, l_strLength);
                         } else {
-                            PrintUART("Not Send, to LINBLE.\r\n");
+                            PrintUART((uint8_t *)"Not Send, to LINBLE.\r\n");
                         }
                     } else {
-                        PrintUART("BLE linble online enter error\r\n");
+                        PrintUART((uint8_t *)"BLE linble online enter error\r\n");
                     }
 
                     break;
+                    /* -------------------------------------------------- */
                 default:
                     PrintUART((uint8_t *)"Error runBLE : switch default reached.\r\n");
                     break;
             }
+            /* -------------------------------------------------- */
 
-            break;
-
+            break;  //case SYS_STATE_BLE:
+                    /* -------------------------------------------------- */
         case SYS_STATE_BLE_CENTRAL:
+            /* -------------------------------------------------- */
             switch (LINBLEStatus) {
+                /* -------------------------------------------------- */
                 case LINBLE_STATE_COMMAND:
-                    l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+                    l_strLength = UART_GetReceiveData((uint8_t *)&l_strBuf, 64);
 
 // #define MYDEBUG_LINBLE_CENTRAL_ENTER
 #ifdef MYDEBUG_LINBLE_CENTRAL_ENTER
-                    PrintUART("debug : UART_GetReceiveData() :");
+                    PrintUART((uint8_t *)"debug : UART_GetReceiveData() :");
                     PrintUARTInt(l_strLength);
-                    PrintUART("\r\n");
+                    PrintUART((uint8_t *)"\r\n");
 #endif
 
                     if (l_strLength > 0) {
+                        /* -------------------------------------------------- */
                         switch (l_strBuf[0]) {
+                            /* -------------------------------------------------- */
                             case '1':
-                                PrintUART("pushed 1, Start scan around.\r\n");
+                                PrintUART((uint8_t *)"pushed 1, Start scan around.\r\n");
                                 LINBLE_SendCmdScanDevice();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
                                 break;
+                                /* -------------------------------------------------- */
                             case '2':
                                 // バージョンを表示する
                                 LINBLE_SendCmdShowVersion();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
                                 break;
+
+                                /* -------------------------------------------------- */
                             case '3':
                                 // LINBLEのデバイス名を表示する
                                 LINBLE_SendCmdShowDeviceName();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
                                 break;
+                                /* -------------------------------------------------- */
                             case '4':
                                 // LINBLEの現在の状態を取得する
                                 LINBLE_SendCmdCheckStatus();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
                                 break;
+                                /* -------------------------------------------------- */
                             case '5':
                                 // 検索した1番目のデバイスに接続する
                                 LINBLE_SendCmdConnectPeripheral();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
                                 break;
+                                /* -------------------------------------------------- */
 
                             default:
-                                PrintUART("not Command.\r\n");
+                                PrintUART((uint8_t *)"not Command.\r\n");
                                 break;
+                                /* -------------------------------------------------- */
                         }
+                        /* -------------------------------------------------- */
+
                     } else {
-                        PrintUART("BLE Central command string 0 error.\r\n");
+                        PrintUART((uint8_t *)"BLE Central command string 0 error.\r\n");
                     }
                     break;
+                    /* -------------------------------------------------- */
 
                 case LINBLE_STATE_ONLINE:
-                    l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+                    l_strLength = UART_GetReceiveData((uint8_t *)&l_strBuf, 64);
 
                     if (l_strLength > 0) {
-                        if (PrintLINBLE(&l_strBuf, l_strLength) == true) {
-                            PrintUART("Send Done, to LINBLE.\r\n");
+                        if (PrintLINBLE((uint8_t *)&l_strBuf, l_strLength) == true) {
+                            PrintUART((uint8_t *)"Send Done, to LINBLE.\r\n");
                             // PrintUARTn(&l_strBuf, l_strLength);
                         } else {
-                            PrintUART("Not Send, to LINBLE.\r\n");
+                            PrintUART((uint8_t *)"Not Send, to LINBLE.\r\n");
                         }
                     } else {
-                        PrintUART("linble online enter error\r\n");
+                        PrintUART((uint8_t *)"linble online enter error\r\n");
                     }
 
                     break;
+                    /* -------------------------------------------------- */
+
                 // SYS_STATE_BLE_CENTRAL switch
                 default:
                     break;
             }
-
+            /* -------------------------------------------------- */
         // sys_state
         default:
             // 何もしない
             break;
     }
+    /* -------------------------------------------------- */
 }
 
 bool LINBLE_GetReceiveResultMesgWaitFlg(void) {
@@ -386,8 +412,8 @@ void LINBLE_ClrReceiveResultMesgWaitFlg(void) {
 // 接続が成功すると、0が返る
 // 接続が失敗すると、-1か返る
 int8_t LINBLE_SendCmdStartConnection(void) {
-    if (LINBLE_SendCmdStrToLINBLE("BTA\r", 4) != 0) {
-        PrintUART("error StartConnection\r\n");
+    if (LINBLE_SendCmdStrToLINBLE((uint8_t *)"BTA\r", 4) != 0) {
+        PrintUART((uint8_t *)"error StartConnection\r\n");
         return -1;
     } else {
         return 0;
@@ -395,8 +421,8 @@ int8_t LINBLE_SendCmdStartConnection(void) {
 }
 
 int8_t LINBLE_SendCmdCheckStatus(void) {
-    if (LINBLE_SendCmdStrToLINBLE("BTE\r", 4) != 0) {
-        PrintUART("error CheckStatus()\r\n");
+    if (LINBLE_SendCmdStrToLINBLE((uint8_t *)"BTE\r", 4) != 0) {
+        PrintUART((uint8_t *)"error CheckStatus()\r\n");
         return -1;
     } else {
         return 0;
@@ -404,8 +430,8 @@ int8_t LINBLE_SendCmdCheckStatus(void) {
 }
 
 int8_t LINBLE_SendCmdShowVersion(void) {
-    if (LINBLE_SendCmdStrToLINBLE("BTZ\r", 4) != 0) {
-        PrintUART("error LINBLE_SendCmdShowVersion()\r\n");
+    if (LINBLE_SendCmdStrToLINBLE((uint8_t *)"BTZ\r", 4) != 0) {
+        PrintUART((uint8_t *)"error LINBLE_SendCmdShowVersion()\r\n");
         return -1;
     } else {
         return 0;
@@ -413,8 +439,8 @@ int8_t LINBLE_SendCmdShowVersion(void) {
 }
 
 int8_t LINBLE_SendCmdShowDeviceName(void) {
-    if (LINBLE_SendCmdStrToLINBLE("BTM\r", 4) != 0) {
-        PrintUART("error LINBLE_SendCmdShowDeviceName()\r\n");
+    if (LINBLE_SendCmdStrToLINBLE((uint8_t *)"BTM\r", 4) != 0) {
+        PrintUART((uint8_t *)"error LINBLE_SendCmdShowDeviceName()\r\n");
         return -1;
     } else {
         return 0;
@@ -423,8 +449,8 @@ int8_t LINBLE_SendCmdShowDeviceName(void) {
 
 // 最大8台、タイムアウト2秒
 int8_t LINBLE_SendCmdScanDevice(void) {
-    if (LINBLE_SendCmdStrToLINBLE("BTI82\r", 6) != 0) {
-        PrintUART("error LINBLE_SendCmdScanDevice()\r\n");
+    if (LINBLE_SendCmdStrToLINBLE((uint8_t *)"BTI82\r", 6) != 0) {
+        PrintUART((uint8_t *)"error LINBLE_SendCmdScanDevice()\r\n");
         return -1;
     } else {
         LINBLE_cmdFlg.bti = true;
@@ -434,8 +460,8 @@ int8_t LINBLE_SendCmdScanDevice(void) {
 
 // セントラル側がペリフェラル側に接続する
 int8_t LINBLE_SendCmdConnectPeripheral(void) {
-    if (LINBLE_SendCmdStrToLINBLE("BTC1\r", 5) != 0) {
-        PrintUART("error LINBLE_SendCmdConnectPeripheral()\r\n");
+    if (LINBLE_SendCmdStrToLINBLE((uint8_t *)"BTC1\r", 5) != 0) {
+        PrintUART((uint8_t *)"error LINBLE_SendCmdConnectPeripheral()\r\n");
         return -1;
     } else {
         LINBLE_cmdFlg.btc = true;
@@ -444,18 +470,17 @@ int8_t LINBLE_SendCmdConnectPeripheral(void) {
 }
 
 int8_t LINBLE_SendCmdStrToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize) {
-    uint8_t l_ret[BUF_STR_SIZE];
     int8_t l_errorState = -1;
 
     if (LINBLE_ReceiveResultMesgWaitFlg == true) {
-        PrintUART("The result message has not come back yet\r\n");
+        PrintUART((uint8_t *)"The result message has not come back yet\r\n");
         return -1;
     }
 
     l_errorState = HAL_UART_Transmit_IT(this_huart, i_cmd, i_cmdSize);
 
     if (l_errorState != 0) {
-        PrintUART("error sendcommandtolinble\r\n");
+        PrintUART((uint8_t *)"error sendcommandtolinble\r\n");
 
         return -1;
     } else {
@@ -464,51 +489,53 @@ int8_t LINBLE_SendCmdStrToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize) {
 }
 
 int8_t LINBLE_ReceiveDataBTI(uint8_t *i_strBuf, uint8_t i_bufSize) {
-    static l_btc_ack_state = false;
+    static bool  l_btc_ack_state = false;
 
     if (l_btc_ack_state == false) {
         // acknを受信、次のconnに備える
-        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, "ACKN\r\n", 6) == 1) {
-            PrintUART("LINBLE_ReceiveDataBTI() read ackn\r\n");
+        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, (uint8_t *)"ACKN\r\n", 6) == 1) {
+            PrintUART((uint8_t *)"LINBLE_ReceiveDataBTI() read ackn\r\n");
             l_btc_ack_state = true;
         } else {
         }
     } else {
         // TERMが来るまでリードする
-        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, "TERM\r\n", 6) != 1) {
-            PrintUART("Scan device : ");
+        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, (uint8_t *)"TERM\r\n", 6) != 1) {
+            PrintUART((uint8_t *)"Scan device : ");
             PrintUART(i_strBuf);
-            PrintUART("\r\n");
+            PrintUART((uint8_t *)"\r\n");
         } else {
-            PrintUART("LINBLE_ReceiveDataBTI() read TERN\r\n");
+            PrintUART((uint8_t *)"LINBLE_ReceiveDataBTI() read TERN\r\n");
             l_btc_ack_state   = false;
             LINBLE_cmdFlg.bti = false;
         }
     }
+    return 0;
 }
 
 // ペリフェラルへの接続要求の受信待機
 // btcフラグが立っている時の受信処理
 int8_t LINBLE_ReceiveDataBTC(uint8_t *i_strBuf, uint8_t i_bufSize) {
-    static l_btc_ack_state = false;
+    static bool l_btc_ack_state = false;
 
     if (l_btc_ack_state == false) {
         // acknを受信、次のconnに備える
-        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, "ACKN\r\n", 6) == 1) {
-            PrintUART("LINBLE_ReceiveDataBTC() read ackn\r\n");
+        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, (uint8_t *)"ACKN\r\n", 6) == 1) {
+            PrintUART((uint8_t *)"LINBLE_ReceiveDataBTC() read ackn\r\n");
             l_btc_ack_state = true;
         } else {
         }
     } else {
         // connを受信、LINBLEの状態をコマンド状態から、オンライン状態へ遷移
-        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, "CONN\r\n", 6) == 1) {
-            PrintUART("ReceiveDataBTC() read conn\r\n");
+        if (Mystring_FindStrFromEnd(i_strBuf, i_bufSize, (uint8_t *)"CONN\r\n", 6) == 1) {
+            PrintUART((uint8_t *)"ReceiveDataBTC() read conn\r\n");
             LINBLE_SetState(LINBLE_STATE_ONLINE);
             l_btc_ack_state   = false;
             LINBLE_cmdFlg.btc = false;
         } else {
         }
     }
+    return 0;
 }
 
 // コマンド実行フラグの構造体のポインタを返す
@@ -545,12 +572,12 @@ int8_t PrintLINBLE(uint8_t *i_str, uint8_t i_size) {
     /* ---------------------------------------------------- */
 
     // 終端文字を見つけるまで かつ バッファ分まで
-    if (MyString_FindEOL(&l_strBuf, i_size + 1) <= 0) {
+    if (MyString_FindEOL((uint8_t *)&l_strBuf, i_size + 1) <= 0) {
         l_strBuf[i_size] = '\0';
     }
 
     /* -------------------------------------*/
 
-    int status = HAL_UART_Transmit(this_huart, &l_strBuf, (uint16_t)(strlen((const char *)&l_strBuf)), 0xffff);
+    int status = HAL_UART_Transmit(this_huart, (uint8_t *)&l_strBuf, (strlen((const char *)&l_strBuf)), 0xffff);
     return status == HAL_OK;
 }

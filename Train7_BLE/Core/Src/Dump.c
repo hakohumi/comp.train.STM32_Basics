@@ -7,8 +7,11 @@
 
 #include "Dump.h"
 
+#include <stdio.h>
 #include "LCD.h"
 #include "UART.h"
+#include "mystringfunc.h"
+#include <string.h>
 
 void Dump_readMemLine(uint8_t *i_memStartAddr, uint8_t i_readSize, uint8_t *o_memDataArray);
 
@@ -47,8 +50,6 @@ int8_t Dump_sendMemDumpUART(uint8_t *i_memStartAddr, uint32_t i_readSize) {
     uint8_t l_strCharaBuf[3];
     // メモリのデータ1行分の配列
     uint8_t l_memDataArray[BUF_LINE_SIZE];
-    // メモリを読み取る箇所のアドレス
-    uint8_t *l_memReadDataPtr;
     // 表示行頭アドレス
     uint8_t *l_memBeginLineAddr;
 
@@ -69,18 +70,18 @@ int8_t Dump_sendMemDumpUART(uint8_t *i_memStartAddr, uint32_t i_readSize) {
     // 1行目表示
     // 12文字空白後、「+0 +1 +2 +3」
     // BUF_LINE_SIZEによって、列数を変更する
-    sprintf(l_strBuf, "Address\t\t");
+    sprintf((char *)&l_strBuf, (const char *)"Address\t\t");
     //	sprintf(l_strBuf, "Address\t\t%c", LINE_SEPARATE);
     for (i = 0; i < BUF_LINE_SIZE; i++) {
         if (i == 8) {
-            sprintf(l_strBuf, "%s  %2d", l_strBuf, i);
+            sprintf((char *)&l_strBuf, (char *)"%s  %2d", l_strBuf, i);
         } else {
-            sprintf(l_strBuf, "%s%c%2d", l_strBuf, LINE_SEPARATE, i);
+            sprintf((char *)&l_strBuf, (char *)"%s%c%2d", l_strBuf, LINE_SEPARATE, i);
         }
     }
 
     PrintUART(l_strBuf);
-    PrintUART("\r\n");
+    PrintUART((uint8_t *)"\r\n");
 
     // 2行目以降
 
@@ -91,7 +92,7 @@ int8_t Dump_sendMemDumpUART(uint8_t *i_memStartAddr, uint32_t i_readSize) {
 
     // サイズのチェック
     if (i_readSize == 0) {
-        PrintUART("指定されたサイズが異常です。\r\n");
+        PrintUART((uint8_t *)"指定されたサイズが異常です。\r\n");
         return -1;
     }
 
@@ -102,7 +103,7 @@ int8_t Dump_sendMemDumpUART(uint8_t *i_memStartAddr, uint32_t i_readSize) {
     //		if ((i_memStartAddr + i_readSize -1 ) > 0xFFFFFFFF && (i_memStartAddr + i_readSize -1 ) < 0) {
     if (i_memStartAddr > l_memEndAddr || (i_memStartAddr + i_readSize - 1) < i_memStartAddr) {
         // エラー処理
-        PrintUART("終了アドレスが異常です\r\n");
+        PrintUART((uint8_t *)"終了アドレスが異常です\r\n");
         return -1;
     }
     /* -------------------------------------------------------------- */
@@ -120,7 +121,7 @@ int8_t Dump_sendMemDumpUART(uint8_t *i_memStartAddr, uint32_t i_readSize) {
     // 指定したサイズの行数分、1行分メモリを読んで表示させるを繰り返す
     while (l_memBeginLineAddr <= l_memEndAddr) {
         // 指定された行頭アドレスを表示
-        sprintf(l_strBuf, "0x%08x\t", l_memBeginLineAddr);
+        sprintf((char *)&l_strBuf, (const char *)"0x%08x\t", (unsigned int)l_memBeginLineAddr);
 
         // もし、最後の行になったら、リードする数を減らす
         l_endAddrOffset = (uint32_t)((l_memEndAddr - l_memBeginLineAddr) / BUF_LINE_SIZE);
@@ -142,29 +143,29 @@ int8_t Dump_sendMemDumpUART(uint8_t *i_memStartAddr, uint32_t i_readSize) {
         }
 
         // 初期化
-        memset(l_strASCIIBuf, '\0', BUF_STR_SIZE);
-        memset(l_strCharaBuf, '\0', 3);
+        memset(&l_strASCIIBuf, '\0', BUF_STR_SIZE);
+        memset(&l_strCharaBuf, '\0', 3);
 
         // アドレスから行数分のメモリ内のデータを表示
         for (i = 0; i < BUF_LINE_SIZE; i++) {
-            memset(l_strCharaBuf, '\0', 3);
+            memset(&l_strCharaBuf, '\0', 3);
 
             // Hex
             // オフセットがある場合、その場所まで空白にする
             if (i < l_startAddrOffset) {
-                memcpy(l_strCharaBuf, "..", 2);
+                memcpy(&l_strCharaBuf, (uint8_t *)"..", 2);
             } else if (i > l_endAddrOffset) {
-                memcpy(l_strCharaBuf, "..", 2);
+                memcpy(&l_strCharaBuf, (uint8_t *)"..", 2);
             } else {
-                sprintf(l_strCharaBuf, "%02x", l_memDataArray[i]);
+                sprintf((char *)&l_strCharaBuf, (char *)"%02x", l_memDataArray[i]);
             }
 
             // 8列目で、空行を2つ入れる
             if (i == 8) {
-                sprintf(l_strBuf, "%s%c%c%s", l_strBuf, LINE_SEPARATE, LINE_SEPARATE, l_strCharaBuf);
+                sprintf((char *)&l_strBuf, "%s%c%c%s", l_strBuf, LINE_SEPARATE, LINE_SEPARATE, l_strCharaBuf);
 
             } else {
-                sprintf(l_strBuf, "%s%c%s", l_strBuf, LINE_SEPARATE, l_strCharaBuf);
+                sprintf((char *)&l_strBuf, "%s%c%s", l_strBuf, LINE_SEPARATE, l_strCharaBuf);
             }
 
             memset(l_strCharaBuf, '\0', 3);
@@ -173,23 +174,23 @@ int8_t Dump_sendMemDumpUART(uint8_t *i_memStartAddr, uint32_t i_readSize) {
             // オフセットがある場合、その場所まで空白にする
             if (i < l_startAddrOffset) {
                 // アスキー表示用バッファにも、空白を格納
-                sprintf(l_strCharaBuf, ".");
+                sprintf((char *)&l_strCharaBuf, ".");
 
             } else if (i > l_endAddrOffset) {
                 // アスキー表示用バッファにも、空白を格納
-                sprintf(l_strCharaBuf, ".");
+                sprintf((char *)&l_strCharaBuf, ".");
             } else {
                 // 制御文字の回避
                 if (MyString_CheckCharCtrlCode(l_memDataArray[i]) == false) {
                     // 制御文字の場合
-                    sprintf(l_strCharaBuf, ".");
+                    sprintf((char *)&l_strCharaBuf, ".");
                 } else {
                     // 英数字の場合
-                    sprintf(l_strCharaBuf, "%1c", l_memDataArray[i]);
+                    sprintf((char *)&l_strCharaBuf, (char *)"%1c", l_memDataArray[i]);
                 }
             }
 
-            sprintf(l_strASCIIBuf, "%s%s", l_strASCIIBuf, l_strCharaBuf);
+            sprintf((char *)&l_strASCIIBuf, (char *)"%s%s", l_strASCIIBuf, l_strCharaBuf);
         }
 
         // オフセットの初期化
@@ -199,11 +200,11 @@ int8_t Dump_sendMemDumpUART(uint8_t *i_memStartAddr, uint32_t i_readSize) {
         PrintUART(l_strBuf);
 
         // セパレート挿入
-        PrintUART(" ");
+        PrintUART((uint8_t *)" ");
         PrintUART(l_strASCIIBuf);
 
         // 改行文字の挿入
-        PrintUART("\r\n");
+        PrintUART((uint8_t *)"\r\n");
         //		sprintf(l_strBuf, "%s\r\n", l_strBuf);
 
         // 1行進む

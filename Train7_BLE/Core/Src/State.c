@@ -126,13 +126,13 @@ void State_RunRealtimeProcess(void) {
         case SYS_STATE_BLE:
             // 状態に入って1回だけ実行する処理
             if (l_StateOld != l_SysState) {
-                PrintUART("BLE Command Mode\r\n");
-                PrintUART("Please enter the Commond.\r\n");
-                PrintUART("Command list :\r\n");
-                PrintUART("\"1\" : Transition to advertised state.\r\n");
-                PrintUART("\"2\" : Print LINBLE firmware version.\r\n");
-                PrintUART("\"3\" : Print LINBLE Bluetooth device address.\r\n");
-                PrintUART("\"4\" : Print LNBLE State.\r\n");
+                PrintUART((uint8_t *)"BLE Command Mode\r\n");
+                PrintUART((uint8_t *)"Please enter the Commond.\r\n");
+                PrintUART((uint8_t *)"Command list :\r\n");
+                PrintUART((uint8_t *)"\"1\" : Transition to advertised state.\r\n");
+                PrintUART((uint8_t *)"\"2\" : Print LINBLE firmware version.\r\n");
+                PrintUART((uint8_t *)"\"3\" : Print LINBLE Bluetooth device address.\r\n");
+                PrintUART((uint8_t *)"\"4\" : Print LNBLE State.\r\n");
             }
 
             UART_ReceiveInput(SystemState);
@@ -142,14 +142,14 @@ void State_RunRealtimeProcess(void) {
         case SYS_STATE_BLE_CENTRAL:
             // 状態に入って1回だけ実行する処理
             if (l_StateOld != l_SysState) {
-                PrintUART("BLE Central Command Mode\r\n");
-                PrintUART("Please enter the Commond.\r\n");
-                PrintUART("Command list :\r\n");
-                PrintUART("\"1\" : Transition to advertised state.\r\n");
-                PrintUART("\"2\" : Print LINBLE firmware version.\r\n");
-                PrintUART("\"3\" : Print LINBLE Bluetooth device address.\r\n");
-                PrintUART("\"4\" : Print LNBLE State.\r\n");
-                PrintUART("\"5\" : Connect to Peripheral LINBLE.\r\n");
+                PrintUART((uint8_t *)"BLE Central Command Mode\r\n");
+                PrintUART((uint8_t *)"Please enter the Commond.\r\n");
+                PrintUART((uint8_t *)"Command list :\r\n");
+                PrintUART((uint8_t *)"\"1\" : Transition to advertised state.\r\n");
+                PrintUART((uint8_t *)"\"2\" : Print LINBLE firmware version.\r\n");
+                PrintUART((uint8_t *)"\"3\" : Print LINBLE Bluetooth device address.\r\n");
+                PrintUART((uint8_t *)"\"4\" : Print LNBLE State.\r\n");
+                PrintUART((uint8_t *)"\"5\" : Connect to Peripheral LINBLE.\r\n");
             }
 
             UART_ReceiveInput(SystemState);
@@ -239,30 +239,30 @@ void State_runDebugOutput(void) {
 // シリアルに温度送信
 #ifndef NOUSE_I2CTEMP
 #ifdef MYDEBUG_I2CTEMP
-    dprintUART("i2c tmp : ", TempI2C_GetTemp());
+    dprintUART((uint8_t *)"i2c tmp : ", TempI2C_GetTemp());
 #endif
 #endif
 
 #ifdef MYDEBUG_ADCTEMP
     // アナログ温度センサの値を送信
-    dprintUART("Tim21over : adc tmp : ", TEMP_ADC_GetTemp());
+    dprintUART((uint8_t *)"Tim21over : adc tmp : ", TEMP_ADC_GetTemp());
 #endif
 
 // ADCした値をデバッグ
 #ifndef NOUSE_MOVING_AVERAGE_FILTER
-    dprintUART("ADC exTemp Value :", ADC_GetRawValue(ADC_DATA_IDX_EXTEMP));
+    dprintUART((uint8_t *)"ADC exTemp Value :", ADC_GetRawValue(ADC_DATA_IDX_EXTEMP));
 
     // 距離センサの平均値を求める処理
     l_value = ADC_GetRawValue(ADC_DATA_IDX_DISTANCE);
     l_avrVal += l_value;
     l_avrCnt++;
 
-    dprintUART("ADC Distance sensor Value :", l_value);
-    //		printUART("ADC Distance Average  :", l_avrVal);
+    dprintUART((uint8_t *)"ADC Distance sensor Value :", l_value);
+    //		printUART((uint8_t *)"ADC Distance Average  :", l_avrVal);
     if (l_avrCnt > 9) {
         l_avrVal /= l_avrCnt;
-        dprintUART("Average cnt : ", l_avrCnt);
-        dprintUART("ADC Distance 10 times Average : ", l_avrVal);
+        dprintUART((uint8_t *)"Average cnt : ", l_avrCnt);
+        dprintUART((uint8_t *)"ADC Distance 10 times Average : ", l_avrVal);
         l_avrVal = 0;
         l_avrCnt = 0;
     }
@@ -270,13 +270,13 @@ void State_runDebugOutput(void) {
 #endif
 
 #ifdef MYDEBUG_DISTANCE
-    dprintUART("ADC Distance :", (uint16_t)Distance_ADC_GetDistance());
+    dprintUART((uint8_t *)"ADC Distance :", (uint16_t)Distance_ADC_GetDistance());
 #endif
 
     // 内蔵温度センサ
-    //		printUART("ADC inTemp Value :", ADC_GetRawValue(ADC_DATA_IDX_INTEMP));
+    //		printUART((uint8_t *)"ADC inTemp Value :", ADC_GetRawValue(ADC_DATA_IDX_INTEMP));
     // 内部電圧値
-    //		printUART("ADC VREFINT Value :", ADC_GetRawValue(ADC_DATA_IDX_VREFINT));
+    //		printUART((uint8_t *)"ADC VREFINT Value :", ADC_GetRawValue(ADC_DATA_IDX_VREFINT));
 
     // デバッグ用
     dprintUART((uint8_t *)"Timer :  tim21  overflow cnt : ", (uint16_t)l_count);
@@ -296,17 +296,17 @@ void State_runBLE(void) {
 // #define MYDEBUG_BLE_BUF
 #ifdef MYDEBUG_BLE_BUF
     l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
-    PrintUART("LINBLE Receive data buf : ");
+    PrintUART((uint8_t *)"LINBLE Receive data buf : ");
     PrintUART(&l_strBuf);
-    PrintUART("str length : ");
+    PrintUART((uint8_t *)"str length : ");
     PrintUARTInt(l_strLength);
-    PrintUART("\r\n");
+    PrintUART((uint8_t *)"\r\n");
     l_strLength = UART_GetReceiveData(&l_strBuf, 64);
-    PrintUART("UART Send data buf : ");
+    PrintUART((uint8_t *)"UART Send data buf : ");
     PrintUART(&l_strBuf);
-    PrintUART("str length : ");
+    PrintUART((uint8_t *)"str length : ");
     PrintUARTInt(l_strLength);
-    PrintUART("\r\n");
+    PrintUART((uint8_t *)"\r\n");
 #endif
 
 // #define MYDEBUG_BLE_STATE
@@ -388,12 +388,12 @@ void State_runRealtimeBLEInput(void) {
 
                 if (l_strLength > 0) {
                     // 受信したコマンドの表示
-                    PrintUART("Recevie Command : ");
+                    PrintUART((uint8_t *)"Recevie Command : ");
                     PrintUART(&l_strBuf);
-                    PrintUART("\r\n");
+                    PrintUART((uint8_t *)"\r\n");
 
                     if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
-                        PrintUART("read ackn\r\n");
+                        PrintUART((uint8_t *)"read ackn\r\n");
                         LINBLE_SetState(LINBLE_STATE_ADVERTISE);
                         // LINBLE_SetEscapeStateFlg();
 
@@ -408,7 +408,7 @@ void State_runRealtimeBLEInput(void) {
                     LINBLE_BufferCountClear();
 
                 } else {
-                    PrintUART("error linble run realtime ble input state command \r\n");
+                    PrintUART((uint8_t *)"error linble run realtime ble input state command \r\n");
                 }
 
             } else {
@@ -426,21 +426,21 @@ void State_runRealtimeBLEInput(void) {
 
                 if (l_strLength > 0) {
                     // 受信したコマンドの表示
-                    PrintUART("Recevie Command : ");
+                    PrintUART((uint8_t *)"Recevie Command : ");
                     PrintUART(&l_strBuf);
-                    PrintUART("\r\n");
+                    PrintUART((uint8_t *)"\r\n");
 
                     if (Mystring_FindStrFromEnd(l_strBuf, 64, "CONN\r\n", 6) == 1) {
-                        PrintUART("read CONN in advertise\r\n");
+                        PrintUART((uint8_t *)"read CONN in advertise\r\n");
                         LINBLE_SetState(LINBLE_STATE_ONLINE);
                         LINBLE_ClrReceiveResultMesgWaitFlg();
 
                     } else if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
-                        PrintUART("read ACKN in advertise\r\n");
+                        PrintUART((uint8_t *)"read ACKN in advertise\r\n");
                         // LINBLE_SetState(LINBLE_STATE_COMMAND);
                         // LINBLE_SetEscapeStateFlg();
                     } else if (Mystring_FindStrFromEnd(l_strBuf, 64, "DISC\r\n", 6) == 1) {
-                        PrintUART("read DISC in advertise\r\n");
+                        PrintUART((uint8_t *)"read DISC in advertise\r\n");
                         LINBLE_SetState(LINBLE_STATE_COMMAND);
                         LINBLE_ClrReceiveResultMesgWaitFlg();
                     } else {
@@ -451,7 +451,7 @@ void State_runRealtimeBLEInput(void) {
                     // バッファカウンタのクリア
                     LINBLE_BufferCountClear();
                 } else {
-                    PrintUART("error linble run realtime ble input state command \r\n");
+                    PrintUART((uint8_t *)"error linble run realtime ble input state command \r\n");
                 }
             }
 
@@ -465,11 +465,11 @@ void State_runRealtimeBLEInput(void) {
                     // PrintUARTInt(l_unreadCount);
                     l_strLength = LINBLE_GetReceiveDataLast(&l_strBuf, l_unreadCount + 1);
                     if (l_strLength > 0) {
-                        PrintUART("Receive Data : ");
+                        PrintUART((uint8_t *)"Receive Data : ");
                         PrintUART(&l_strBuf);
-                        PrintUART("\r\n");
+                        PrintUART((uint8_t *)"\r\n");
                     } else {
-                        PrintUART("error ble linble state online\r\n");
+                        PrintUART((uint8_t *)"error ble linble state online\r\n");
                     }
                 }
             }
@@ -484,16 +484,16 @@ void State_runRealtimeBLEInput(void) {
 
                 if (l_strLength > 0) {
                     // 受信したコマンドの表示
-                    PrintUART("Receive Command : ");
+                    PrintUART((uint8_t *)"Receive Command : ");
                     PrintUART(&l_strBuf);
-                    PrintUART("\r\n");
+                    PrintUART((uint8_t *)"\r\n");
 
                     if (Mystring_FindStrFromEnd(l_strBuf, 64, "DISC\r\n", 6) == 1) {
-                        PrintUART("read DISC in online\r\n");
+                        PrintUART((uint8_t *)"read DISC in online\r\n");
                         LINBLE_SetState(LINBLE_STATE_ADVERTISE);
 
                     } else if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
-                        PrintUART("read ACKN in online\r\n");
+                        PrintUART((uint8_t *)"read ACKN in online\r\n");
                         // LINBLE_SetState(LINBLE_STATE_COMMAND);
                     } else {
                     }
@@ -504,14 +504,14 @@ void State_runRealtimeBLEInput(void) {
                     LINBLE_BufferCountClear();
 
                 } else {
-                    PrintUART("error linble run realtime ble input state command \r\n");
+                    PrintUART((uint8_t *)"error linble run realtime ble input state command \r\n");
                 }
             }
 
             break;
 
         default:
-            PrintUART("error unrealtime Ble input \r\n");
+            PrintUART((uint8_t *)"error unrealtime Ble input \r\n");
             break;
     }
 
@@ -558,7 +558,7 @@ void State_runRealtimeBLECentralInput(void) {
 
                 // 何も入力されていない場合、エラー
                 if (l_strLength <= 0) {
-                    PrintUART("error linble run realtime ble central input state command \r\n");
+                    PrintUART((uint8_t *)"error linble run realtime ble central input state command \r\n");
                 } else {
                     // ここから、コマンド実行フラグを元にして、
                     // それぞれの処理をしたい
@@ -575,9 +575,9 @@ void State_runRealtimeBLECentralInput(void) {
                         LINBLE_ReceiveDataBTC(&l_strBuf, l_strLength);
                     } else {
                         // LINBLEから受取ったデータをコンソールへ出力
-                        PrintUART("Receive LINBLE data : ");
+                        PrintUART((uint8_t *)"Receive LINBLE data : ");
                         PrintUART(&l_strBuf);
-                        PrintUART("\r\n");
+                        PrintUART((uint8_t *)"\r\n");
                     }
 
                     // 受信待機フラグをクリアする
@@ -607,12 +607,12 @@ void State_runRealtimeBLECentralInput(void) {
 
                 // 何も入力されていない場合、エラー
                 if (l_strLength <= 0) {
-                    PrintUART("error linble run realtime ble central input state online \r\n");
+                    PrintUART((uint8_t *)"error linble run realtime ble central input state online \r\n");
                 } else {
                     // LINBLEから受取ったデータをコンソールへ出力
-                    PrintUART("Receive LINBLE data : ");
+                    PrintUART((uint8_t *)"Receive LINBLE data : ");
                     PrintUART(&l_strBuf);
-                    PrintUART("\r\n");
+                    PrintUART((uint8_t *)"\r\n");
 
                     // 受信待機フラグをクリアする
                     LINBLE_ClrReceiveResultMesgWaitFlg();
@@ -630,7 +630,7 @@ void State_runRealtimeBLECentralInput(void) {
             l_receiveCountOld = l_receiveCount;
             break;
         default:
-            PrintUART("can't\r\n");
+            PrintUART((uint8_t *)"can't\r\n");
             break;
     }
     l_linbleStateOld = l_linbleState;
