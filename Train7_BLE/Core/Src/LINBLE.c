@@ -24,14 +24,13 @@ static int8_t LINBLEStatus = LINBLE_STATE_COMMAND;
 // 受信バッファ
 static uint8_t LINBLE_ReceiveData1[LINBLE_RECEIVE_BUF];
 // 最後の文字のバッファ
+// UARTの割り込みバッファに指定
 static uint8_t LINBLE_ReceiveCharLast;
 
 // 受信した文字数
 static uint8_t LINBLE_ReceiveCount;
 // 最後のカウント
 static uint8_t LINBLE_ReceiveCountLast;
-
-static uint8_t recieveBuf;
 
 // エンドラインフラグ
 static bool LINBLE_EndLineFlg = false;
@@ -41,6 +40,9 @@ static bool LINBLE_ReceiveResultMesgWaitFlg = false;
 
 // 未読バッファカウンタ（1バイト）
 static uint8_t LINBLE_ReceiveDataUnReadCount = 0;
+
+// まだリードしていない最初のインデックス
+static uint8_t LINBLE_ReadPos = 0;
 
 typedef struct {
     bool bti;
@@ -57,7 +59,7 @@ void LINBLE_Init(UART_HandleTypeDef *huart) {
     this_huart = huart;
 
     // LINBLE UART 受信設定
-    HAL_UART_Receive_IT(this_huart, &recieveBuf, 1);
+    HAL_UART_Receive_IT(this_huart, &LINBLE_ReceiveCharLast, 1);
 
     // BLEのイニシャライズ
     // リセット後、500ms以上待つ必要がある
@@ -66,7 +68,7 @@ void LINBLE_Init(UART_HandleTypeDef *huart) {
 
 // 受信したデータを格納する
 void LINBLE_SetReceiveData(void) {
-    uint8_t i_data = recieveBuf;
+    uint8_t i_data = LINBLE_ReceiveCharLast;
 
     // リザルトメッセージの最後が<CR><LF>なことを利用して、コマンドの最後を検出
     if (i_data == '\n') {
@@ -110,7 +112,7 @@ int8_t LINBLE_DecReceiveDataUnReadCount(void) {
 
 // mainの受信割込みで呼ばれる
 void LINBLE_ReloadReceiveInterrupt(void) {
-    HAL_UART_Receive_IT(this_huart, &recieveBuf, 1);
+    HAL_UART_Receive_IT(this_huart, &LINBLE_ReceiveCharLast, 1);
 }
 
 uint8_t LINBLE_GetReceiveCountLast(void) {
@@ -118,7 +120,7 @@ uint8_t LINBLE_GetReceiveCountLast(void) {
 }
 
 uint8_t LINBLE_GetReceiveCharLast(void) {
-    return recieveBuf;
+    return LINBLE_ReceiveCharLast;
 }
 bool LINBLE_GetEndLineFlg(void) {
     return LINBLE_EndLineFlg;
@@ -154,29 +156,32 @@ uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
     return i;
 }
 
-// バッファに入っているデータを後ろからi_bufSize - 1 文字取得する
+// バッファに入っているデータ前回リードした位置からi_bufSize - 1 文字取得する
 uint8_t LINBLE_GetReceiveDataLast(uint8_t *o_strAddr, uint8_t i_bufSize) {
-    uint8_t i   = 0;
-    uint8_t cnt = 0;
+    uint8_t i            = LINBLE_ReadPos;
+    uint8_t l_readLength = 0;
+    uint8_t cnt          = 0;
+    uint8_t start        = 0;
+    uint8_t end          = 0;
 
     // バッファに入っている文字列より、取得しようとしている文字列の方が長い場合、
-    if (LINBLE_ReceiveCountLast + 1 < i_bufSize - 1) {
-        i = 0;
-    } else {
-        i = (LINBLE_ReceiveCountLast + 1) - (i_bufSize - 1);
+    if ((LINBLE_ReceiveCountLast - LINBLE_ReadPos) + 1 < i_bufSize) {
+        l_readLength = (LINBLE_ReceiveCountLast - LINBLE_ReadPos) + 1;
+    } else {  // バッファよりリード範囲が短い場合
+              // 終端用の1バイト
+        l_readLength = i_bufSize - 1;
     }
 
-    // バッファサイズより大きい場合の例外
-    // if (LINBLE_ReceiveCountLast > i_bufSize - 1) {
-    // PrintUART("error データがバッファに入らない\r\n");
-    // return 0;
-    // }
+    start = LINBLE_ReadPos;
+    end   = LINBLE_ReceiveCountLast;
 
-    while (i <= LINBLE_ReceiveCountLast) {
+    // 開始から終了までコピー
+
+    for (i = start; i <= end && l_readLength > 0; i++, l_readLength--) {
         *o_strAddr = LINBLE_ReceiveData1[i];
-        i++;
         o_strAddr++;
         cnt++;
+        LINBLE_ReadPos++;
         LINBLE_DecReceiveDataUnReadCount();
     }
 
