@@ -222,6 +222,7 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
     uint8_t l_strBuf[64];
     uint8_t l_strLength;
 
+    // if (i_sysState == SYS_STATE_BLE) {
     switch (i_sysState) {
         case SYS_STATE_BLE:
 
@@ -301,7 +302,8 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
             /* -------------------------------------------------- */
 
             break;  //case SYS_STATE_BLE:
-                    /* -------------------------------------------------- */
+                    // } else if (i_sysState == SYS_STATE_BLE_CENTRAL) {
+        /* -------------------------------------------------- */
         case SYS_STATE_BLE_CENTRAL:
             /* -------------------------------------------------- */
             switch (LINBLEStatus) {
@@ -367,6 +369,7 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                     } else {
                         PrintUART((uint8_t *)"BLE Central command string 0 error.\r\n");
                     }
+
                     break;
                     /* -------------------------------------------------- */
 
@@ -391,11 +394,12 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                 default:
                     break;
             }
-            /* -------------------------------------------------- */
+            break;
+        /* -------------------------------------------------- */
         // sys_state
         default:
-            // 何もしない
             break;
+            // 何もしない
     }
     /* -------------------------------------------------- */
 }
@@ -489,7 +493,7 @@ int8_t LINBLE_SendCmdStrToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize) {
 }
 
 int8_t LINBLE_ReceiveDataBTI(uint8_t *i_strBuf, uint8_t i_bufSize) {
-    static bool  l_btc_ack_state = false;
+    static bool l_btc_ack_state = false;
 
     if (l_btc_ack_state == false) {
         // acknを受信、次のconnに備える
