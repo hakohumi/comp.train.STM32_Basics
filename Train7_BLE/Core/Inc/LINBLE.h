@@ -28,13 +28,13 @@ void LINBLE_ReloadReceiveInterrupt(void);
 bool LINBLE_GetReceiveResultMesgWaitFlg(void);
 void LINBLE_ClrReceiveResultMesgWaitFlg(void);
 
+// 未読バッファカウンタ
+uint8_t LINBLE_GetReceiveDataUnReadCount(void);
+int8_t LINBLE_DecReceiveDataUnReadCount(void);
+
 // エンドラインフラグ
 bool LINBLE_GetEndLineFlg(void);
 bool LINBLE_CleEndLineFlg(void);
-
-bool LINBLE_GetEscapeStateFlg(void);
-void LINBLE_SetEscapeStateFlg(void);
-void LINBLE_ClrEscapeStateFlg(void);
 
 void LINBLE_BufferCountClear(void);
 
@@ -45,6 +45,9 @@ int8_t LINBLE_SendCmdStrToLINBLE(uint8_t *i_cmd, uint8_t i_cmdSize);
 
 // バッファに入っているデータを取得する
 uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize);
+
+// バッファに入っているデータを後ろからi_bufSize - 1 文字取得する
+uint8_t LINBLE_GetReceiveDataLast(uint8_t *o_strAddr, uint8_t i_bufSize);
 
 // 現在のバッファのインデックス位置を取得
 uint8_t LINBLE_GetReceiveCountLast(void);

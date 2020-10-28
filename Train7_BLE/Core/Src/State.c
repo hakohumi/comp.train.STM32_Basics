@@ -380,12 +380,15 @@ void State_runRealtimeBLEInput(void) {
         case LINBLE_STATE_COMMAND:
 
             // リザルトメッセージ待機フラグが立っていたときのみ実行
-            if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
+            // if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
+            if (LINBLE_GetEndLineFlg() == true) {
                 // コマンド状態中にBTAを入力されると、アドバタイズ状態へ遷移する
                 // アドバタイズ状態へ遷移したことがわかるには、ACKN<CR><LF>
                 l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
 
                 if (l_strLength > 0) {
+                    // 受信したコマンドの表示
+                    PrintUART("Recevie Command : ");
                     PrintUART(&l_strBuf);
                     PrintUART("\r\n");
 
@@ -417,10 +420,13 @@ void State_runRealtimeBLEInput(void) {
 
             // アドバタイズ状態は、受信メッセージをずっと受け付ける
 
-            if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
+            // if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
+            if (LINBLE_GetEndLineFlg() == true) {
                 l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
 
                 if (l_strLength > 0) {
+                    // 受信したコマンドの表示
+                    PrintUART("Recevie Command : ");
                     PrintUART(&l_strBuf);
                     PrintUART("\r\n");
 
@@ -451,15 +457,33 @@ void State_runRealtimeBLEInput(void) {
 
             break;
         case LINBLE_STATE_ONLINE:
+            if (LINBLE_GetEndLineFlg() == false) {
+                // 文字が送られて来た時
+                uint8_t l_unreadCount = LINBLE_GetReceiveDataUnReadCount();
+                if (l_unreadCount > 0) {
+                    PrintUARTInt(l_unreadCount);
+                    l_strLength = LINBLE_GetReceiveDataLast(&l_strBuf, l_unreadCount + 1);
+                    if (l_strLength > 0) {
+                        PrintUART("Receive Data : ");
+                        PrintUART(&l_strBuf);
+                        PrintUART("\r\n");
+                    } else {
+                        PrintUART("error ble linble state online\r\n");
+                    }
+                }
+            }
             // オンライン状態では、入出力をそのまま送受信する
             // ただ、"@@@"を入力するとエスケープ状態へ移行する
             // また、"DISC<CR><LF>を受信すると、アドバタイズ状態へ遷移する
 
             // コマンドを受信した場合
-            if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
+            // if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
+            if (LINBLE_GetEndLineFlg() == true) {
                 l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
 
                 if (l_strLength > 0) {
+                    // 受信したコマンドの表示
+                    PrintUART("Receive Command : ");
                     PrintUART(&l_strBuf);
                     PrintUART("\r\n");
 
@@ -484,6 +508,7 @@ void State_runRealtimeBLEInput(void) {
             }
 
             break;
+
         default:
             PrintUART("error unrealtime Ble input \r\n");
             break;

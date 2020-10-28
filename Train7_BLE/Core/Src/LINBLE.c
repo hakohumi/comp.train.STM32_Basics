@@ -17,9 +17,9 @@
 #define BUF_STR_SIZE 64
 #define LINBLE_RECEIVE_BUF 64
 
-static int8_t LINBLEStatus = LINBLE_STATE_COMMAND;
+static UART_HandleTypeDef *this_huart;
 
-static bool LINBLE_EscapeStateFlg = false;
+static int8_t LINBLEStatus = LINBLE_STATE_COMMAND;
 
 // 受信バッファ
 static uint8_t LINBLE_ReceiveData1[LINBLE_RECEIVE_BUF];
@@ -31,8 +31,6 @@ static uint8_t LINBLE_ReceiveCount;
 // 最後のカウント
 static uint8_t LINBLE_ReceiveCountLast;
 
-static UART_HandleTypeDef *this_huart;
-
 static uint8_t recieveBuf;
 
 // エンドラインフラグ
@@ -40,6 +38,9 @@ static bool LINBLE_EndLineFlg = false;
 
 // 受信待機フラグ
 static bool LINBLE_ReceiveResultMesgWaitFlg = false;
+
+// 未読バッファカウンタ（1バイト）
+static uint8_t LINBLE_ReceiveDataUnReadCount = 0;
 
 typedef struct {
     bool bti;
@@ -81,6 +82,9 @@ void LINBLE_SetReceiveData(void) {
     // 入力桁数を増加
     LINBLE_ReceiveCount++;
 
+    // 未読バッファカウンタを増加
+    LINBLE_ReceiveDataUnReadCount++;
+
     // 入力がバッファを超えたら、
     if (LINBLE_ReceiveCount >= LINBLE_RECEIVE_BUF - 1) {
         // 最後に終端文字を入れる
@@ -88,6 +92,19 @@ void LINBLE_SetReceiveData(void) {
 
         // バッファを最初からにする
         LINBLE_ReceiveCount = 0;
+    }
+}
+
+uint8_t LINBLE_GetReceiveDataUnReadCount(void) {
+    return LINBLE_ReceiveDataUnReadCount;
+}
+
+int8_t LINBLE_DecReceiveDataUnReadCount(void) {
+    if (LINBLE_ReceiveDataUnReadCount > 0) {
+        LINBLE_ReceiveDataUnReadCount--;
+    } else {
+        PrintUART("LINBLE DecReceiveDataUnReadCount() error\r\n");
+        return -1;
     }
 }
 
@@ -110,30 +127,21 @@ void LINBLE_ClrEndLineFlg(void) {
     LINBLE_EndLineFlg = false;
 }
 
-bool LINBLE_GetEscapeStateFlg(void) {
-    return LINBLE_EscapeStateFlg;
-}
-void LINBLE_SetEscapeStateFlg(void) {
-    LINBLE_EscapeStateFlg = true;
-}
-void LINBLE_ClrEscapeStateFlg(void) {
-    LINBLE_EscapeStateFlg = false;
-}
-
-// バッファに入っているデータを取得する
+// バッファに入っている全てのデータを取得する
 uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
     uint8_t i = 0;
 
     // バッファサイズより大きい場合の例外
-    if (LINBLE_ReceiveCountLast > i_bufSize - 1) {
-        PrintUART("error linble getreceivedata\r\n");
-        return 0;
-    }
+    // if (LINBLE_ReceiveCountLast > i_bufSize - 1) {
+    // PrintUART("error データがバッファに入らない\r\n");
+    // return 0;
+    // }
 
     while (i <= LINBLE_ReceiveCountLast && i < i_bufSize - 1) {
         *o_strAddr = LINBLE_ReceiveData1[i];
         i++;
         o_strAddr++;
+        LINBLE_DecReceiveDataUnReadCount();
     }
 
     *o_strAddr = '\0';
@@ -144,6 +152,37 @@ uint8_t LINBLE_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
 #endif
 
     return i;
+}
+
+// バッファに入っているデータを後ろからi_bufSize - 1 文字取得する
+uint8_t LINBLE_GetReceiveDataLast(uint8_t *o_strAddr, uint8_t i_bufSize) {
+    uint8_t i   = 0;
+    uint8_t cnt = 0;
+
+    // バッファに入っている文字列より、取得しようとしている文字列の方が長い場合、
+    if (LINBLE_ReceiveCountLast + 1 < i_bufSize - 1) {
+        i = 0;
+    } else {
+        i = (LINBLE_ReceiveCountLast + 1) - (i_bufSize - 1);
+    }
+
+    // バッファサイズより大きい場合の例外
+    // if (LINBLE_ReceiveCountLast > i_bufSize - 1) {
+    // PrintUART("error データがバッファに入らない\r\n");
+    // return 0;
+    // }
+
+    while (i <= LINBLE_ReceiveCountLast) {
+        *o_strAddr = LINBLE_ReceiveData1[i];
+        i++;
+        o_strAddr++;
+        cnt++;
+        LINBLE_DecReceiveDataUnReadCount();
+    }
+
+    *o_strAddr = '\0';
+
+    return cnt;
 }
 
 // バッファカウントをクリア
@@ -188,7 +227,7 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                     if (l_strLength > 0) {
                         switch (l_strBuf[0]) {
                             case '1':
-                                PrintUART("pushed 1, Start connection.\r\n");
+                                PrintUART("pushed 1. Try Start connection.\r\n");
                                 LINBLE_SendCmdStartConnection();
                                 // 受信待機フラグ
                                 LINBLE_ReceiveResultMesgWaitFlg = true;
@@ -214,11 +253,11 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
                                 break;
 
                             default:
-                                PrintUART("not commmand.");
+                                PrintUART("not commmand.\r\n");
                                 break;
                         }
                     } else {
-                        PrintUART("error BLE LINBLE ENTER HANDER\r\n")
+                        PrintUART("error BLE LINBLE ENTER HANDLER\r\n");
                     }
 
                     break;
@@ -305,10 +344,11 @@ void LINBLE_EnterHandler(uint8_t i_sysState) {
 
                 case LINBLE_STATE_ONLINE:
                     l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+
                     if (l_strLength > 0) {
                         if (PrintLINBLE(&l_strBuf, l_strLength) == true) {
                             PrintUART("Send Done, to LINBLE.\r\n");
-                            PrintUARTn(&l_strBuf, l_strLength);
+                            // PrintUARTn(&l_strBuf, l_strLength);
                         } else {
                             PrintUART("Not Send, to LINBLE.\r\n");
                         }

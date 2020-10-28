@@ -151,7 +151,7 @@ int main(void) {
 	/* USER CODE BEGIN 2 */
 
 	// システム状態の初期化
-	State_Init(SYS_STATE_BLE_CENTRAL);
+	State_Init(SYS_STATE_BLE);
 
 	// LINBLEの初期化
 	LINBLE_Init(&huart1);
