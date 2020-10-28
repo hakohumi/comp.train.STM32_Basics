@@ -287,8 +287,10 @@ void State_runDebugOutput(void) {
 }
 
 void State_runBLE(void) {
+#ifdef MYDEBUG_BLE_BUF
     uint8_t l_strBuf[64];
     uint8_t l_strLength;
+#endif
 
     LCD_ClearBuffer();
     LCD_WriteToBuffer(0, (uint8_t *)"BLE", 3);
@@ -384,15 +386,15 @@ void State_runRealtimeBLEInput(void) {
             if (LINBLE_GetEndLineFlg() == true) {
                 // コマンド状態中にBTAを入力されると、アドバタイズ状態へ遷移する
                 // アドバタイズ状態へ遷移したことがわかるには、ACKN<CR><LF>
-                l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+                l_strLength = LINBLE_GetReceiveData((uint8_t *)&l_strBuf, 64);
 
                 if (l_strLength > 0) {
                     // 受信したコマンドの表示
                     PrintUART((uint8_t *)"Recevie Command : ");
-                    PrintUART(&l_strBuf);
+                    PrintUART((uint8_t *)&l_strBuf);
                     PrintUART((uint8_t *)"\r\n");
 
-                    if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
+                    if (Mystring_FindStrFromEnd((uint8_t *)&l_strBuf, 64, (uint8_t *)"ACKN\r\n", 6) == 1) {
                         PrintUART((uint8_t *)"read ackn\r\n");
                         LINBLE_SetState(LINBLE_STATE_ADVERTISE);
                         // LINBLE_SetEscapeStateFlg();
@@ -422,24 +424,24 @@ void State_runRealtimeBLEInput(void) {
 
             // if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
             if (LINBLE_GetEndLineFlg() == true) {
-                l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+                l_strLength = LINBLE_GetReceiveData((uint8_t *)&l_strBuf, 64);
 
                 if (l_strLength > 0) {
                     // 受信したコマンドの表示
                     PrintUART((uint8_t *)"Recevie Command : ");
-                    PrintUART(&l_strBuf);
+                    PrintUART((uint8_t *)&l_strBuf);
                     PrintUART((uint8_t *)"\r\n");
 
-                    if (Mystring_FindStrFromEnd(l_strBuf, 64, "CONN\r\n", 6) == 1) {
+                    if (Mystring_FindStrFromEnd((uint8_t *)&l_strBuf, 64, (uint8_t *)"CONN\r\n", 6) == 1) {
                         PrintUART((uint8_t *)"read CONN in advertise\r\n");
                         LINBLE_SetState(LINBLE_STATE_ONLINE);
                         LINBLE_ClrReceiveResultMesgWaitFlg();
 
-                    } else if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
+                    } else if (Mystring_FindStrFromEnd((uint8_t *)&l_strBuf, 64, (uint8_t *)"ACKN\r\n", 6) == 1) {
                         PrintUART((uint8_t *)"read ACKN in advertise\r\n");
                         // LINBLE_SetState(LINBLE_STATE_COMMAND);
                         // LINBLE_SetEscapeStateFlg();
-                    } else if (Mystring_FindStrFromEnd(l_strBuf, 64, "DISC\r\n", 6) == 1) {
+                    } else if (Mystring_FindStrFromEnd((uint8_t *)&l_strBuf, 64, (uint8_t *)"DISC\r\n", 6) == 1) {
                         PrintUART((uint8_t *)"read DISC in advertise\r\n");
                         LINBLE_SetState(LINBLE_STATE_COMMAND);
                         LINBLE_ClrReceiveResultMesgWaitFlg();
@@ -463,10 +465,10 @@ void State_runRealtimeBLEInput(void) {
                 if (l_unreadCount > 0) {
                     // 未読バッファ数
                     // PrintUARTInt(l_unreadCount);
-                    l_strLength = LINBLE_GetReceiveDataLast(&l_strBuf, l_unreadCount + 1);
+                    l_strLength = LINBLE_GetReceiveDataLast((uint8_t *)&l_strBuf, l_unreadCount + 1);
                     if (l_strLength > 0) {
                         PrintUART((uint8_t *)"Receive Data : ");
-                        PrintUART(&l_strBuf);
+                        PrintUART((uint8_t *)&l_strBuf);
                         PrintUART((uint8_t *)"\r\n");
                     } else {
                         PrintUART((uint8_t *)"error ble linble state online\r\n");
@@ -480,19 +482,19 @@ void State_runRealtimeBLEInput(void) {
             // コマンドを受信した場合
             // if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg()) == true) {
             if (LINBLE_GetEndLineFlg() == true) {
-                l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+                l_strLength = LINBLE_GetReceiveData((uint8_t *)&l_strBuf, 64);
 
                 if (l_strLength > 0) {
                     // 受信したコマンドの表示
                     PrintUART((uint8_t *)"Receive Command : ");
-                    PrintUART(&l_strBuf);
+                    PrintUART((uint8_t *)&l_strBuf);
                     PrintUART((uint8_t *)"\r\n");
 
-                    if (Mystring_FindStrFromEnd(l_strBuf, 64, "DISC\r\n", 6) == 1) {
+                    if (Mystring_FindStrFromEnd((uint8_t *)&l_strBuf, 64, (uint8_t *)"DISC\r\n", 6) == 1) {
                         PrintUART((uint8_t *)"read DISC in online\r\n");
                         LINBLE_SetState(LINBLE_STATE_ADVERTISE);
 
-                    } else if (Mystring_FindStrFromEnd(l_strBuf, 64, "ACKN\r\n", 6) == 1) {
+                    } else if (Mystring_FindStrFromEnd((uint8_t *)&l_strBuf, 64, (uint8_t *)"ACKN\r\n", 6) == 1) {
                         PrintUART((uint8_t *)"read ACKN in online\r\n");
                         // LINBLE_SetState(LINBLE_STATE_COMMAND);
                     } else {
@@ -524,8 +526,6 @@ void State_runRealtimeBLECentralInput(void) {
     uint8_t l_linbleState           = LINBLE_GetState();
     uint8_t l_strBuf[64];
     uint8_t l_strLength;
-    uint8_t l_receiveCount;
-    static uint8_t l_receiveCountOld = 0;
 
     if (l_linbleState != l_linbleStateOld) {
         switch (l_linbleState) {
@@ -554,7 +554,7 @@ void State_runRealtimeBLECentralInput(void) {
             // リザルトメッセージ待機フラグが立っていたときのみ実行
             if (LINBLE_GetEndLineFlg() == true) {
                 // if ((LINBLE_GetReceiveResultMesgWaitFlg() == true) && LINBLE_GetEndLineFlg()) == true) {
-                l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+                l_strLength = LINBLE_GetReceiveData((uint8_t *)&l_strBuf, 64);
 
                 // 何も入力されていない場合、エラー
                 if (l_strLength <= 0) {
@@ -570,13 +570,13 @@ void State_runRealtimeBLECentralInput(void) {
 
                     // BTIコマンドを実行した時の処理
                     if (LINBLE_GetCmdFlg(LINBLE_FLG_CMD_BTI) == true) {
-                        LINBLE_ReceiveDataBTI(&l_strBuf, l_strLength);
+                        LINBLE_ReceiveDataBTI((uint8_t *)&l_strBuf, l_strLength);
                     } else if (LINBLE_GetCmdFlg(LINBLE_FLG_CMD_BTC) == true) {  // BTCコマンドを実行した時の処理
-                        LINBLE_ReceiveDataBTC(&l_strBuf, l_strLength);
+                        LINBLE_ReceiveDataBTC((uint8_t *)&l_strBuf, l_strLength);
                     } else {
                         // LINBLEから受取ったデータをコンソールへ出力
                         PrintUART((uint8_t *)"Receive LINBLE data : ");
-                        PrintUART(&l_strBuf);
+                        PrintUART((uint8_t *)&l_strBuf);
                         PrintUART((uint8_t *)"\r\n");
                     }
 
@@ -596,12 +596,10 @@ void State_runRealtimeBLECentralInput(void) {
             }
             break;
         case LINBLE_STATE_ONLINE:
-            l_receiveCount = LINBLE_GetReceiveCountLast();
             // リザルトメッセージ待機フラグが立っていたときのみ実行
-            // if (l_receiveCount != l_receiveCountOld) {
             if ((LINBLE_GetEndLineFlg()) == true) {
                 // l_strLength = 1;
-                l_strLength = LINBLE_GetReceiveData(&l_strBuf, 64);
+                l_strLength = LINBLE_GetReceiveData((uint8_t *)&l_strBuf, 64);
                 // l_strBuf[0] = LINBLE_GetReceiveCharLast();
                 // l_strBuf[1] = '\0';
 
@@ -611,7 +609,7 @@ void State_runRealtimeBLECentralInput(void) {
                 } else {
                     // LINBLEから受取ったデータをコンソールへ出力
                     PrintUART((uint8_t *)"Receive LINBLE data : ");
-                    PrintUART(&l_strBuf);
+                    PrintUART((uint8_t *)&l_strBuf);
                     PrintUART((uint8_t *)"\r\n");
 
                     // 受信待機フラグをクリアする
@@ -627,7 +625,6 @@ void State_runRealtimeBLECentralInput(void) {
             } else {
                 // 何もしない
             }
-            l_receiveCountOld = l_receiveCount;
             break;
         default:
             PrintUART((uint8_t *)"can't\r\n");

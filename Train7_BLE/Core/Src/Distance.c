@@ -6,6 +6,7 @@
  */
 
 #include "Distance.h"
+#include "Temp_ADC.h"
 
 uint16_t *g_ADCBuffer;
 

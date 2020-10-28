@@ -10,8 +10,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "LINBLE.h"
 #include "Dump.h"
 #include "State.h"
+#include "mystringfunc.h"
 
 #define DATANUM 128
 
@@ -209,7 +211,7 @@ void UART_ReloadReceiveInterrupt(void) {
 uint8_t UART_ReceiveInput(uint8_t i_sysState) {
     bool l_do_flg = false;
 
-#ifdef MYDEBUG
+#ifdef MYDEBUG_UART_RECEIVEINPUT
     uint8_t l_buf[UART_RECEIVE_BUF];
 #endif
 
@@ -341,7 +343,7 @@ void UART_RunMemDump(void) {
     // 引数1つ目と2つ目の値を格納する配列
     static uint32_t ls_FuncArgumentArray[2] = {0, 0};
 
-    l_strLength = UART_GetReceiveData(&l_strBuf, 64);
+    l_strLength = UART_GetReceiveData((uint8_t * )&l_strBuf, 64);
     PrintUARTInt(l_strLength);
 
     if (l_strLength == 1) {
@@ -465,13 +467,13 @@ int8_t PrintUARTn(uint8_t *i_str, uint8_t i_size) {
     /* ---------------------------------------------------- */
 
     // 終端文字を見つけるまで かつ バッファ分まで
-    if (MyString_FindEOL(&l_strBuf, i_size + 1) <= 0) {
+    if (MyString_FindEOL((uint8_t*)&l_strBuf, i_size + 1) <= 0) {
         l_strBuf[i_size] = '\0';
     }
 
     /* -------------------------------------*/
 
-    int status = HAL_UART_Transmit(this_huart, &l_strBuf, (uint16_t)(strlen((const char *)&l_strBuf)), 0xffff);
+    int status = HAL_UART_Transmit(this_huart, (uint8_t*)&l_strBuf, (uint16_t)(strlen((const char *)&l_strBuf)), 0xffff);
     return status == HAL_OK;
 }
 
@@ -523,13 +525,13 @@ bool printUARTHex(uint8_t *i_str, uint32_t i_var, uint8_t i_len) {
     uint8_t l_buffer[64];
 
     if (i_len == 4) {
-        sprintf((char *)&l_buffer, "%s0x%04x\r\n", i_str, i_var);
+        sprintf((char *)&l_buffer, "%s0x%04x\r\n", i_str, (unsigned int)i_var);
     } else if (i_len == 8) {
-        sprintf((char *)&l_buffer, "%s0x%08x\r\n", i_str, i_var);
+        sprintf((char *)&l_buffer, "%s0x%08x\r\n", i_str, (unsigned int)i_var);
     } else if (i_len == 2) {
-        sprintf((char *)&l_buffer, "%s0x%02x\r\n", i_str, i_var);
+        sprintf((char *)&l_buffer, "%s0x%02x\r\n", i_str, (unsigned int)i_var);
     } else {
-        sprintf((char *)&l_buffer, "%s0x%x\r\n", i_str, i_var);
+        sprintf((char *)&l_buffer, "%s0x%x\r\n", i_str, (unsigned int)i_var);
     }
 
     int status = HAL_UART_Transmit(this_huart, l_buffer, (uint16_t)strlen((const char *)&l_buffer), 0xffff);

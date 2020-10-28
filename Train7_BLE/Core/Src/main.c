@@ -179,7 +179,7 @@ int main(void) {
 #ifdef MYDEBUG
 
     // デバッグ用
-    HAL_UART_Transmit(&huart2, str_initmeseg, strlen(str_initmeseg), 0x1000);
+    HAL_UART_Transmit(&huart2, (uint8_t *)str_initmeseg, strlen((const char *)str_initmeseg), 0x1000);
 
 #endif
 
@@ -194,7 +194,7 @@ int main(void) {
     }
 
     // アナログ温度センサの初期化
-    Temp_ADC_Init(&G_ADCBuffer);
+    Temp_ADC_Init((uint16_t *)&G_ADCBuffer);
 
     // タイマ スタート
     HAL_TIM_Base_Start_IT(&htim21);  // 0.5秒タイマ
@@ -536,7 +536,9 @@ static void MX_GPIO_Init(void) {
 /* USER CODE BEGIN 4 */
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+#ifdef MYDEBUG_UART1_RECEIVE2
     uint8_t l_strBuf[64];
+#endif
 
     if (huart == &huart1) {
         // LINBLEからの受信に関しての問題
@@ -629,7 +631,7 @@ uint16_t ADC_GetRawValue(uint8_t i_idx) {
     if (i_idx < ADC_BUFFER_LENGTH) {
         return G_ADCBuffer[i_idx];
     } else {
-        dprintUART("ADC_GetRawValue() i_idx over num error :", 0);
+        dprintUART((uint8_t *)"ADC_GetRawValue() i_idx over num error :", 0);
         return -1;
     }
 }

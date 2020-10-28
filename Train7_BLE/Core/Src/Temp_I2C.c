@@ -8,12 +8,15 @@
 #include "Temp_I2C.h"
 
 #include "main.h"
+#include "UART.h"
 
 #define TEMP_I2C_ADDR 0x48
 
 I2C_HandleTypeDef *hi2c;
 
+#ifdef NOUSE
 static int TempI2C_Write1Byte(uint8_t i_addr, uint8_t i_data);
+#endif
 
 // 温度センサの初期化
 void TempI2C_Init(I2C_HandleTypeDef *i_hi2c) {
@@ -28,6 +31,11 @@ int TempI2C_GetTemp(void) {
     // リードするアドレスを指定(0x00, MSB)
     int status = HAL_I2C_Master_Transmit(hi2c, TEMP_I2C_ADDR << 1, 0x00, 1, 100);
 
+    if(status != HAL_OK){
+    	PrintUART((uint8_t*)"error\r\n");
+    	return -1;
+    }
+
     uint8_t buf[2];
 
     HAL_I2C_Master_Receive(hi2c, TEMP_I2C_ADDR << 1, buf, 2, 100);
@@ -38,6 +46,8 @@ int TempI2C_GetTemp(void) {
 
     return o_temp / 16;
 }
+
+#ifdef NOUSE
 
 // Address pointer register byte に data byteを書き込む
 static int TempI2C_Write1Byte(uint8_t i_addr, uint8_t i_data) {
@@ -53,5 +63,5 @@ static int TempI2C_Read1Byte() {
 
     HAL_I2C_Master_Receive(hi2c, TEMP_I2C_ADDR << 1, buf, 2, 100);
 }
-
 //正の温度 = ADCコード（dec） / 16 負の温度 = （ADCコード（dec）− 8192） / 16 ここで、ADCコードは符号ビットを含むデータバイトの最初の13MSBを使用します。 負の温度 = （ADCコード（dec）– 4096） / 16 ここで、ビット15（符号ビット）はADCコードから削除されます。
+#endif

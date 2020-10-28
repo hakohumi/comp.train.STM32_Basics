@@ -82,8 +82,8 @@ static uint8_t LCDBuffer[LCD_BUFF_SIZE_MAX];
 static bool updateLCDFlg = OFF;
 
 uint8_t STR_CHAR_BLANK = ' ';
-uint8_t *STR_2CHAR_BLANK = "  ";
-uint8_t *STR_LINE_BLANK = "        ";
+uint8_t *STR_2CHAR_BLANK = (uint8_t *)"  ";
+uint8_t *STR_LINE_BLANK = (uint8_t *)"        ";
 
 /* -------------------------------------------------- */
 
@@ -219,7 +219,7 @@ static int LCD_WriteData(uint8_t data) {
 // i_len 入力 データの件数
 static int LCD_WriteNData(uint8_t *i_data, uint8_t i_len) {
 	uint8_t l_buf[i_len + 1];
-	uint8_t i, c;
+	uint8_t  c;
 	int status;
 
 	l_buf[0] = WR_CONTROLE_BYTE;

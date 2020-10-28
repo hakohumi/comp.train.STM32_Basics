@@ -34,7 +34,7 @@ int8_t LINBLE_DecReceiveDataUnReadCount(void);
 
 // エンドラインフラグ
 bool LINBLE_GetEndLineFlg(void);
-bool LINBLE_CleEndLineFlg(void);
+void LINBLE_ClrEndLineFlg(void);
 
 void LINBLE_BufferCountClear(void);
 

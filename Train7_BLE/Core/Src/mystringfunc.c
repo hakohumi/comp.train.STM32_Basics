@@ -7,6 +7,8 @@
 
 #include "mystringfunc.h"
 
+#include <string.h>
+
 #include "UART.h"
 
 #define ENDOFLINE '\0'
@@ -36,7 +38,7 @@ int8_t Mystring_FindStrFromEnd(uint8_t *i_str, uint8_t i_strSize, uint8_t *i_sea
     uint8_t *l_cmdPnt;
 
     // 検索したい文字列の先頭の文字の位置をだす
-    l_cmdPnt = strrchr(i_str, i_searchStr[0]);
+    l_cmdPnt = (uint8_t*)strrchr((const char *)i_str, (int)i_searchStr[0]);
 
     // 未検出
     if (l_cmdPnt == NULL) {
@@ -50,7 +52,7 @@ int8_t Mystring_FindStrFromEnd(uint8_t *i_str, uint8_t i_strSize, uint8_t *i_sea
     }
 
     // 見つかったら1、見つからなかったら0
-    if (strncmp(l_cmdPnt, i_searchStr, i_searchSize) == 0) {
+    if (strncmp((const char *)l_cmdPnt,(const char *) i_searchStr, i_searchSize) == 0) {
         return 1;
     } else {
         return 0;
