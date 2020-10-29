@@ -8,7 +8,9 @@
 #ifndef INC_MY_ADC_H_
 #define INC_MY_ADC_H_
 
-void MY_ADC_init(ADC_HandleTypeDef *hadc, uint16_t *i_DMABufArray);
+#include "main.h"
+
+void MY_ADC_init(ADC_HandleTypeDef *hadc);
 
 typedef enum {
     MY_ADC_DATA_IDX_EXTEMP   = 0,  // アナログ温度センサ

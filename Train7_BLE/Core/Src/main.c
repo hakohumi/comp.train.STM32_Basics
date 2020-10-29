@@ -588,17 +588,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     }
 }
 
-// デバッグ用
-// アナログポートに接続したピンをADCした値をシリアルに表示する
-uint16_t ADC_GetRawValue(uint8_t i_idx) {
-    // 入力された値が、予め設定されている定数より多いと、エラー（-1）を出力
-    if (i_idx < MY_ADC_BUFFER_LENGTH) {
-        return G_ADCBuffer[i_idx];
-    } else {
-        dprintUART((uint8_t *)"ADC_GetRawValue() i_idx over num error :", 0);
-        return -1;
-    }
-}
 
 /* USER CODE END 4 */
 

@@ -7,6 +7,11 @@
 
 #include "MY_ADC.h"
 
+#include <string.h>
+#include "Temp_ADC.h"
+#include "Distance.h"
+#include "UART.h"
+
 static ADC_HandleTypeDef *this_hadc;
 
 // ADC DMAバッファ
@@ -29,8 +34,20 @@ void MY_ADC_init(ADC_HandleTypeDef *hadc) {
     Distance_Init((uint16_t *)&G_ADCBuffer);
 
     // ADC DMAスタート
-    if (HAL_ADC_Start_DMA(this_hadc, &G_ADCBuffer, MY_ADC_BUFFER_LENGTH) != HAL_OK) {
+    if (HAL_ADC_Start_DMA(this_hadc, (uint32_t*)&G_ADCBuffer, MY_ADC_BUFFER_LENGTH) != HAL_OK) {
         /* Start Conversation Error */
         Error_Handler();
+    }
+}
+
+// デバッグ用
+// アナログポートに接続したピンをADCした値をシリアルに表示する
+uint16_t ADC_GetRawValue(uint8_t i_idx) {
+    // 入力された値が、予め設定されている定数より多いと、エラー（-1）を出力
+    if (i_idx < MY_ADC_BUFFER_LENGTH) {
+        return G_ADCBuffer[i_idx];
+    } else {
+        dprintUART((uint8_t *)"ADC_GetRawValue() i_idx over num error :", 0);
+        return -1;
     }
 }
