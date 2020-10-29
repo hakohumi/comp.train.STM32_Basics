@@ -41,10 +41,13 @@ void State_Init(uint8_t i_state) {
 void State_ChangeStateRoll(void) {
     SystemState++;
     if (SystemState > 5) {
-        SystemState = 4;
+        SystemState = 3;
     }
 
     switch (SystemState) {
+        case SYS_STATE_DEBUG_RECIEVE:
+            PrintUART((uint8_t *)"\r\nSYS State DEBUG RECIEVE\r\n");
+            break;
         case SYS_STATE_BLE:
             PrintUART((uint8_t *)"\r\nSYS_STATE_BLE\r\n");
             break;
