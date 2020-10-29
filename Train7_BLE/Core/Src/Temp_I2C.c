@@ -24,10 +24,10 @@ void TempI2C_Init(I2C_HandleTypeDef *i_hi2c) {
     // 0x03 の7bit目に1を書き込んで、16bit精度にしたかった
 
 #ifdef MYDEBUG
-    if (dprintUART("temp", TempI2C_GetTemp()) == HAL_OK) {
-        dprintUART("OK", 0);
+    if (dprintUART((uint8_t*)"temp", TempI2C_GetTemp()) == HAL_OK) {
+        dprintUART((uint8_t*)"OK", 0);
     } else {
-        dprintUART("ERROR", 0);
+        dprintUART((uint8_t*)"ERROR", 0);
         Error_Handler();
     }
 #endif

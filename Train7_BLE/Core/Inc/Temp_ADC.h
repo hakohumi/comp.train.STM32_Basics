@@ -12,6 +12,5 @@
 
 void Temp_ADC_Init(uint16_t *i_DMABufArray);
 int TEMP_ADC_GetTemp(void);
-uint16_t ADC_ConvertToVoltage(uint16_t i_analog) ;
 
 #endif /* INC_TEMP_ADC_H_ */

@@ -8,9 +8,8 @@
 #include "Distance.h"
 
 #include "MY_ADC.h"
-// #include "Temp_ADC.h"
 
-uint16_t *g_ADCBuffer;
+static uint16_t *g_ADCBuffer;
 
 void Distance_Init(uint16_t *i_DMABufArray) {
     g_ADCBuffer = i_DMABufArray;

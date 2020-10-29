@@ -44,6 +44,7 @@
 // #include "LED.h"
 #include "Input.h"
 #include "LINBLE.h"
+#include "MY_ADC.h"
 #include "State.h"
 #include "Temp_ADC.h"
 #include "UART.h"
@@ -93,8 +94,6 @@ static void MX_ADC_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
-uint16_t ADC_GetRawValue(uint8_t i_idx);
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -107,10 +106,6 @@ uint16_t ADC_GetRawValue(uint8_t i_idx);
  */
 int main(void) {
     /* USER CODE BEGIN 1 */
-
-#ifdef MYDEBUG
-    uint8_t str_initmeseg[] = "Start My Program\r\n\r\n";
-#endif
 
     /* USER CODE END 1 */
 
@@ -158,7 +153,7 @@ int main(void) {
     HAL_TIM_Base_Start_IT(&htim21);  // タイマ スタート0.5秒タイマ
 
 #ifdef MYDEBUG  // デバッグ用 "Start My Program" 表示
-    HAL_UART_Transmit(&huart2, (uint8_t *)str_initmeseg, strlen((const char *)str_initmeseg), 0x1000);
+    PrintUART((uint8_t *)"Start My Program\r\n\r\n");
 #endif
 
     /* USER CODE END 2 */
@@ -587,7 +582,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         State_SetUpdateFlg();
     }
 }
-
 
 /* USER CODE END 4 */
 
