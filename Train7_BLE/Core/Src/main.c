@@ -144,7 +144,6 @@ int main(void) {
     MY_ADC_init(&hadc);  // ADCの初期化:
 
 #ifndef NOUSE_I2CTEMP
-
     TempI2C_Init(&hi2c1);  // I2C温度センサの初期化
 #endif
 
@@ -183,7 +182,6 @@ int main(void) {
 
         // LCD更新
         LCD_BufferToLCD();
-
         /* ---------------------------------------------------------  */
     }
 

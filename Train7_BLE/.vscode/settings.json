@@ -11,6 +11,7 @@
         "string.h": "c",
         "stdbool.h": "c",
         "state.h": "c",
-        "my_adc.h": "c"
+        "my_adc.h": "c",
+        "lcd.h": "c"
     }
 }
