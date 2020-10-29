@@ -7,8 +7,8 @@
 
 #include "Temp_I2C.h"
 
-#include "main.h"
 #include "UART.h"
+#include "main.h"
 
 #define TEMP_I2C_ADDR 0x48
 
@@ -22,6 +22,15 @@ static int TempI2C_Write1Byte(uint8_t i_addr, uint8_t i_data);
 void TempI2C_Init(I2C_HandleTypeDef *i_hi2c) {
     hi2c = i_hi2c;
     // 0x03 の7bit目に1を書き込んで、16bit精度にしたかった
+
+#ifdef MYDEBUG
+    if (dprintUART("temp", TempI2C_GetTemp()) == HAL_OK) {
+        dprintUART("OK", 0);
+    } else {
+        dprintUART("ERROR", 0);
+        Error_Handler();
+    }
+#endif
 }
 
 int TempI2C_GetTemp(void) {
@@ -31,9 +40,9 @@ int TempI2C_GetTemp(void) {
     // リードするアドレスを指定(0x00, MSB)
     int status = HAL_I2C_Master_Transmit(hi2c, TEMP_I2C_ADDR << 1, 0x00, 1, 100);
 
-    if(status != HAL_OK){
-    	PrintUART((uint8_t*)"error\r\n");
-    	return -1;
+    if (status != HAL_OK) {
+        PrintUART((uint8_t *)"error\r\n");
+        return -1;
     }
 
     uint8_t buf[2];

@@ -37,13 +37,6 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-typedef enum {
-    ADC_DATA_IDX_EXTEMP   = 0,  // アナログ温度センサ
-    ADC_DATA_IDX_DISTANCE = 1,  // 距離センサ
-    ADC_DATA_IDX_INTEMP   = 2,  // マイコン内蔵温度センサ
-    ADC_DATA_IDX_VREFINT  = 3,  // マイコンのVREFの値
-    ADC_BUFFER_LENGTH,          // DMAのADC用バッファのサイズ
-} ADC_IDX_Type;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

@@ -250,10 +250,10 @@ void State_runDebugOutput(void) {
 
 // ADCした値をデバッグ
 #ifndef NOUSE_MOVING_AVERAGE_FILTER
-    dprintUART((uint8_t *)"ADC exTemp Value :", ADC_GetRawValue(ADC_DATA_IDX_EXTEMP));
+    dprintUART((uint8_t *)"ADC exTemp Value :", ADC_GetRawValue(MY_ADC_DATA_IDX_EXTEMP));
 
     // 距離センサの平均値を求める処理
-    l_value = ADC_GetRawValue(ADC_DATA_IDX_DISTANCE);
+    l_value = ADC_GetRawValue(MY_ADC_DATA_IDX_DISTANCE);
     l_avrVal += l_value;
     l_avrCnt++;
 
@@ -274,9 +274,9 @@ void State_runDebugOutput(void) {
 #endif
 
     // 内蔵温度センサ
-    //		printUART((uint8_t *)"ADC inTemp Value :", ADC_GetRawValue(ADC_DATA_IDX_INTEMP));
+    //		printUART((uint8_t *)"ADC inTemp Value :", ADC_GetRawValue(MY_ADC_DATA_IDX_INTEMP));
     // 内部電圧値
-    //		printUART((uint8_t *)"ADC VREFINT Value :", ADC_GetRawValue(ADC_DATA_IDX_VREFINT));
+    //		printUART((uint8_t *)"ADC VREFINT Value :", ADC_GetRawValue(MY_ADC_DATA_IDX_VREFINT));
 
     // デバッグ用
     dprintUART((uint8_t *)"Timer :  tim21  overflow cnt : ", (uint16_t)l_count);

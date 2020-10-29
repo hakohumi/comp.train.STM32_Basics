@@ -78,13 +78,6 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
-// ADC DMAバッファ
-uint16_t G_ADCBuffer[ADC_BUFFER_LENGTH];
-
-// デバッグ
-// メモリダンプ アスキー 確認用
-uint8_t str_test[] = "Mem Dump test";
-
 /* ------------------------------------------- */
 
 /* USER CODE END PV */
@@ -119,9 +112,6 @@ int main(void) {
     uint8_t str_initmeseg[] = "Start My Program\r\n\r\n";
 #endif
 
-    // ADCのDMA用のバッファの初期化
-    memset(G_ADCBuffer, 0, sizeof(G_ADCBuffer));
-
     /* USER CODE END 1 */
 
     /* MCU Configuration--------------------------------------------------------*/
@@ -150,54 +140,26 @@ int main(void) {
     MX_USART1_UART_Init();
     /* USER CODE BEGIN 2 */
 
-    // システム状態の初期化
-    State_Init(SYS_STATE_BLE_CENTRAL);
+    UART_Console_Init(&huart2);  // UART  init
 
-    // LINBLEの初期化
-    LINBLE_Init(&huart1);
+    LINBLE_Init(&huart1);  // LINBLEの初期化
 
-    // LCDの初期化
-    LCD_Init(&hi2c1);
+    LCD_Init(&hi2c1);  // LCDの初期化
+
+    MY_ADC_init(&hadc);  // ADCの初期化:
 
 #ifndef NOUSE_I2CTEMP
-    // I2C温度センサの初期化
-    TempI2C_Init(&hi2c1);
 
-#ifdef MYDEBUG
-    if (dprintUART("temp", TempI2C_GetTemp()) == HAL_OK) {
-        dprintUART("OK", 0);
-    } else {
-        dprintUART("ERROR", 0);
-        Error_Handler();
-    }
-#endif
+    TempI2C_Init(&hi2c1);  // I2C温度センサの初期化
 #endif
 
-    // UART  init
-    UART_Console_Init(&huart2);
+    State_Init(SYS_STATE_BLE_CENTRAL);  // システム状態の初期化
 
-#ifdef MYDEBUG
+    HAL_TIM_Base_Start_IT(&htim21);  // タイマ スタート0.5秒タイマ
 
-    // デバッグ用
+#ifdef MYDEBUG  // デバッグ用 "Start My Program" 表示
     HAL_UART_Transmit(&huart2, (uint8_t *)str_initmeseg, strlen((const char *)str_initmeseg), 0x1000);
-
 #endif
-
-    // ADCの初期化
-    // ADCのキャリブレーション
-    HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED);
-
-    // ADC DMAスタート
-    if (HAL_ADC_Start_DMA(&hadc, (uint32_t *)&G_ADCBuffer, ADC_BUFFER_LENGTH) != HAL_OK) {
-        /* Start Conversation Error */
-        Error_Handler();
-    }
-
-    // アナログ温度センサの初期化
-    Temp_ADC_Init((uint16_t *)&G_ADCBuffer);
-
-    // タイマ スタート
-    HAL_TIM_Base_Start_IT(&htim21);  // 0.5秒タイマ
 
     /* USER CODE END 2 */
 
@@ -549,14 +511,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
         PrintChar(LINBLE_GetReceiveCharLast());
         PrintUART("\r\n");
 #endif
-        LINBLE_SetReceiveData();
 
-        // 割込みの再設定
-        LINBLE_ReloadReceiveInterrupt();
+        LINBLE_SetReceiveData();  // リンブルからの受信
+
+        LINBLE_ReloadReceiveInterrupt();  // 割込みの再設定
 
 #ifdef MYDEBUG_UART1_RECEIVE2
 
         switch (State_GetState()) {
+            // 次のシステムの状態の時に
+            // ターミナルに入力した文字列を表示させる
             case SYS_STATE_BLE:
             case SYS_STATE_BLE_CENTRAL:
 
@@ -628,7 +592,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 // アナログポートに接続したピンをADCした値をシリアルに表示する
 uint16_t ADC_GetRawValue(uint8_t i_idx) {
     // 入力された値が、予め設定されている定数より多いと、エラー（-1）を出力
-    if (i_idx < ADC_BUFFER_LENGTH) {
+    if (i_idx < MY_ADC_BUFFER_LENGTH) {
         return G_ADCBuffer[i_idx];
     } else {
         dprintUART((uint8_t *)"ADC_GetRawValue() i_idx over num error :", 0);

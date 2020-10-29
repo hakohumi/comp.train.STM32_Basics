@@ -56,7 +56,7 @@ int TEMP_ADC_GetTemp(void) {
 // l_tmp = (uint16_t) HAL_ADC_GetValue(i_hadc);
 
 // DMA使用
-	l_tmp = g_ADCBuffer[ADC_DATA_IDX_EXTEMP];
+	l_tmp = g_ADCBuffer[MY_ADC_DATA_IDX_EXTEMP];
 
 	l_getVoltage = ADC_ConvertToVoltage(l_tmp);
 

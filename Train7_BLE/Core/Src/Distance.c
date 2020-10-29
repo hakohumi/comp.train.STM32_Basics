@@ -17,7 +17,7 @@ void Distance_Init(uint16_t *i_DMABufArray) {
 // 距離センサから読み取った値を計算して、距離(cm)に変換する
 uint16_t Distance_ADC_GetDistance(void) {
 	uint16_t l_rawValue;
-	l_rawValue = g_ADCBuffer[ADC_DATA_IDX_DISTANCE];
+	l_rawValue = g_ADCBuffer[MY_ADC_DATA_IDX_DISTANCE];
 
 	return (uint16_t) ((6787.0f * 4
 			/ (float) (ADC_ConvertToVoltage(l_rawValue) - 3)) - 4);
