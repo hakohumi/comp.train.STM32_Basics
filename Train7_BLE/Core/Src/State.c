@@ -40,31 +40,16 @@ void State_Init(uint8_t i_state) {
 // システムの状態遷移
 void State_ChangeStateRoll(void) {
     SystemState++;
-    if (SystemState >= SYS_STATE_LENGTH) {
-        SystemState = 0;
+    if (SystemState > 5) {
+        SystemState = 4;
     }
 
     switch (SystemState) {
-        case SYS_STATE_TEMP:
-            dprintUART((uint8_t *)"\r\nSYS State TEMP : ", SystemState);
-            break;
-        case SYS_STATE_DISTANCE:
-            dprintUART((uint8_t *)"\r\nSYS State DISTANCE : ", SystemState);
-            break;
-        case SYS_STATE_DEBUG_POINTER:
-            dprintUART((uint8_t *)"\r\nSYS State DEBUG POINTER : ", SystemState);
-            break;
-        case SYS_STATE_DEBUG_RECIEVE:
-            PrintUART((uint8_t *)"\r\nSYS State DEBUG RECIEVE\r\n");
-            break;
         case SYS_STATE_BLE:
             PrintUART((uint8_t *)"\r\nSYS_STATE_BLE\r\n");
             break;
         case SYS_STATE_BLE_CENTRAL:
             PrintUART((uint8_t *)"\r\nSYS_STATE_BLE_CENTRAL\r\n");
-            break;
-        case SYS_STATE_DEBUG:
-            dprintUART((uint8_t *)"\r\nSYS State DEBUG : ", SystemState);
             break;
         default:
             PrintUART((uint8_t *)"\r\nSYS State main未登録\r\n");
