@@ -39,14 +39,10 @@
 #include <stdbool.h>
 #include <string.h>
 
-// #include "Dump.h"
 #include "LCD.h"
-// #include "LED.h"
 #include "Input.h"
 #include "LINBLE.h"
-#include "MY_ADC.h"
 #include "State.h"
-#include "Temp_ADC.h"
 #include "UART.h"
 
 /* USER CODE END Includes */
@@ -140,12 +136,6 @@ int main(void) {
     LINBLE_Init(&huart1);  // LINBLEの初期化
 
     LCD_Init(&hi2c1);  // LCDの初期化
-
-    MY_ADC_init(&hadc);  // ADCの初期化:
-
-#ifndef NOUSE_I2CTEMP
-    TempI2C_Init(&hi2c1);  // I2C温度センサの初期化
-#endif
 
     State_Init(SYS_STATE_BLE_CENTRAL);  // システム状態の初期化
 

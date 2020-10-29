@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "LINBLE.h"
 #include "Dump.h"
+#include "LINBLE.h"
 #include "State.h"
 #include "mystringfunc.h"
 
@@ -343,11 +343,11 @@ void UART_RunMemDump(void) {
     // 引数1つ目と2つ目の値を格納する配列
     static uint32_t ls_FuncArgumentArray[2] = {0, 0};
 
-    l_strLength = UART_GetReceiveData((uint8_t * )&l_strBuf, 64);
+    l_strLength = UART_GetReceiveData((uint8_t *)&l_strBuf, 64);
     PrintUARTInt(l_strLength);
 
     if (l_strLength == 1) {
-        if (l_strBuf[0] == '\0') {
+        if (l_strBuf[0] == '\r' || l_strBuf[0] == '\n') {
             // enterの文字と、受信した文字列を表示
             PrintUART((uint8_t *)"enter\r\n");
         }
@@ -467,13 +467,13 @@ int8_t PrintUARTn(uint8_t *i_str, uint8_t i_size) {
     /* ---------------------------------------------------- */
 
     // 終端文字を見つけるまで かつ バッファ分まで
-    if (MyString_FindEOL((uint8_t*)&l_strBuf, i_size + 1) <= 0) {
+    if (MyString_FindEOL((uint8_t *)&l_strBuf, i_size + 1) <= 0) {
         l_strBuf[i_size] = '\0';
     }
 
     /* -------------------------------------*/
 
-    int status = HAL_UART_Transmit(this_huart, (uint8_t*)&l_strBuf, (uint16_t)(strlen((const char *)&l_strBuf)), 0xffff);
+    int status = HAL_UART_Transmit(this_huart, (uint8_t *)&l_strBuf, (uint16_t)(strlen((const char *)&l_strBuf)), 0xffff);
     return status == HAL_OK;
 }
 
