@@ -8,10 +8,11 @@
 #include "Dump.h"
 
 #include <stdio.h>
+#include <string.h>
+
 #include "LCD.h"
 #include "UART.h"
 #include "mystringfunc.h"
-#include <string.h>
 
 void Dump_readMemLine(uint8_t *i_memStartAddr, uint8_t i_readSize, uint8_t *o_memDataArray);
 
@@ -68,9 +69,10 @@ int8_t Dump_sendMemDumpUART(uint8_t *i_memStartAddr, uint32_t i_readSize) {
     uint8_t i;
 
     // 1行目表示
-    // 12文字空白後、「+0 +1 +2 +3」
+    // 12文字空白後、「+0 +1 +2 ~~ +7」
     // BUF_LINE_SIZEによって、列数を変更する
-    sprintf((char *)&l_strBuf, (const char *)"Address\t\t");
+    // sprintf((char *)&l_strBuf, (const char *)"Address\t\t");
+    PrintUART((uint8_t *)"Address\t\t");
     //	sprintf(l_strBuf, "Address\t\t%c", LINE_SEPARATE);
     for (i = 0; i < BUF_LINE_SIZE; i++) {
         if (i == 8) {
