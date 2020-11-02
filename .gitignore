@@ -80,3 +80,10 @@ Debug/
 # !.project
 # !.cproject
 /.metadata/
+
+# PlatformIO
+.pioenvs
+.piolibdeps
+.clang_complete
+.gcc-flags.json
+.pio
