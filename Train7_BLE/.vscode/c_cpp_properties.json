@@ -6,8 +6,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "c:/Users/fuminori.hakoishi/STM32CubeIDE/workspace_1.3.0/Train7_BLE_pio2/Core/Inc",
-                "c:/Users/fuminori.hakoishi/STM32CubeIDE/workspace_1.3.0/Train7_BLE_pio2/Core/Src",
+                "c:/Users/fuminori.hakoishi/STM32CubeIDE/workspace_1.3.0/Train7_BLE/Core/Inc",
+                "c:/Users/fuminori.hakoishi/STM32CubeIDE/workspace_1.3.0/Train7_BLE/Core/Src",
                 "C:/Users/fuminori.hakoishi/.platformio/packages/framework-stm32cube/l0/Drivers/CMSIS/Include",
                 "C:/Users/fuminori.hakoishi/.platformio/packages/framework-stm32cube/l0/Drivers/CMSIS/Device/ST/STM32L0xx/Include",
                 "C:/Users/fuminori.hakoishi/.platformio/packages/framework-stm32cube/l0/Drivers/STM32L0xx_HAL_Driver/Inc",
@@ -24,8 +24,8 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "c:/Users/fuminori.hakoishi/STM32CubeIDE/workspace_1.3.0/Train7_BLE_pio2/Core/Inc",
-                    "c:/Users/fuminori.hakoishi/STM32CubeIDE/workspace_1.3.0/Train7_BLE_pio2/Core/Src",
+                    "c:/Users/fuminori.hakoishi/STM32CubeIDE/workspace_1.3.0/Train7_BLE/Core/Inc",
+                    "c:/Users/fuminori.hakoishi/STM32CubeIDE/workspace_1.3.0/Train7_BLE/Core/Src",
                     "C:/Users/fuminori.hakoishi/.platformio/packages/framework-stm32cube/l0/Drivers/CMSIS/Include",
                     "C:/Users/fuminori.hakoishi/.platformio/packages/framework-stm32cube/l0/Drivers/CMSIS/Device/ST/STM32L0xx/Include",
                     "C:/Users/fuminori.hakoishi/.platformio/packages/framework-stm32cube/l0/Drivers/STM32L0xx_HAL_Driver/Inc",
