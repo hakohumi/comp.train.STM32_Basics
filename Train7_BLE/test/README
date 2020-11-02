@@ -1,0 +1,10 @@
+このディレクトリは、PlatformIOユニットテストとプロジェクトテストを対象としています。
+
+ユニットテストは、個々のユニットが
+ソースコード、1つまたは複数のMCUプログラムモジュールのセットと関連
+制御データ、使用手順、および操作手順は、
+それらが使用に適しているかどうかを判断します。ユニットテストで問題を早期に発見
+開発サイクルで。
+
+More information about PlatformIO Unit Testing:
+- https://docs.platformio.org/page/plus/unit-testing.html
