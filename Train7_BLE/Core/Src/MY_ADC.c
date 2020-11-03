@@ -18,7 +18,8 @@ static ADC_HandleTypeDef *this_hadc;
 // ADC DMAバッファ
 uint16_t G_ADCBuffer[MY_ADC_BUFFER_LENGTH];
 
-void MY_ADC_init(ADC_HandleTypeDef *hadc) {
+void MY_ADC_init(ADC_HandleTypeDef *hadc)
+{
     // ADCのDMA用のバッファの初期化
     memset(G_ADCBuffer, 0, sizeof(G_ADCBuffer));
 
@@ -35,7 +36,8 @@ void MY_ADC_init(ADC_HandleTypeDef *hadc) {
     Distance_Init((uint16_t *)&G_ADCBuffer);
 
     // ADC DMAスタート
-    if (HAL_ADC_Start_DMA(this_hadc, (uint32_t *)&G_ADCBuffer, MY_ADC_BUFFER_LENGTH) != HAL_OK) {
+    if (HAL_ADC_Start_DMA(this_hadc, (uint32_t *)&G_ADCBuffer, MY_ADC_BUFFER_LENGTH) != HAL_OK)
+    {
         /* Start Conversation Error */
         Error_Handler();
     }
@@ -50,7 +52,8 @@ void MY_ADC_init(ADC_HandleTypeDef *hadc) {
 #define ADC_VREF 3316
 
 // ADC analog値 を 電圧値に変換する関数
-uint16_t ADC_ConvertToVoltage(uint16_t i_analog) {
+uint16_t ADC_ConvertToVoltage(uint16_t i_analog)
+{
     float l_getVoltage;
 
     // 読み取ったアナログ値と分解能との比率を基準電圧に掛けて電圧を求める
@@ -63,12 +66,17 @@ uint16_t ADC_ConvertToVoltage(uint16_t i_analog) {
 
 // デバッグ用
 // アナログポートに接続したピンをADCした値をシリアルに表示する
-uint16_t ADC_GetRawValue(uint8_t i_idx) {
+uint16_t ADC_GetRawValue(uint8_t i_idx)
+{
     // 入力された値が、予め設定されている定数より多いと、エラー（-1）を出力
-    if (i_idx < MY_ADC_BUFFER_LENGTH) {
+    if (i_idx < MY_ADC_BUFFER_LENGTH)
+    {
         return G_ADCBuffer[i_idx];
-    } else {
-        dprintUART((uint8_t *)"ADC_GetRawValue() i_idx over num error :", 0);
+    }
+    else
+    {
+        PrintUART((uint8_t *)"ADC_GetRawValue() i_idx over num error\r\n");
+
         return -1;
     }
 }

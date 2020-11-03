@@ -26,6 +26,7 @@
 #define INPUT_BUF_SIZE 64
 
 void UART_enterHundler(uint8_t i_sysState);
+void UART_receiveInput(uint8_t i_sysState);
 
 // バッファ
 static uint8_t UART_ReceiveData1[UART_RECEIVE_BUF];
@@ -49,10 +50,17 @@ static uint8_t UART_State = UART_STATE_NONPUSHED;
 
 // 受信フラグ
 bool UART_ReceiveLineFlg = false;
-bool UART_ReceiveFlg     = false;
+bool UART_ReceiveFlg = false;
 
 // バッファが最初に戻ったフラグ
 bool UART_ReceiveBufEndFlg = false;
+
+// 割込みの再設定
+// mainの受信割込みで呼ばれる
+void UART_ReloadReceiveInterrupt(void)
+{
+    HAL_UART_Receive_IT(this_huart, &UART_ReceiveCharLast, 1);
+}
 
 // terattermからの受信
 // キー入力による文字列が入力される
@@ -60,14 +68,15 @@ bool UART_ReceiveBufEndFlg = false;
 // CRもLFもCR + LFもどれもCR + LFにする
 // CRかLFを受信した場合、CR + LFに直す
 // 受信したデータを格納する
-void UART_SetReceiveData(void) {
+void UART_SetReceiveData(void)
+{
     // Enterフラグ
     // SetReceiveData()内のフラグ
     bool l_receiveEnterFlg = false;
     // バッファオーバーフローフラグ
     bool l_receiveCountOverFlowFlg = false;
 
-    uint8_t i_data    = UART_ReceiveCharLast;
+    uint8_t i_data = UART_ReceiveCharLast;
     static bool CRFlg = false;
     // LFフラグ
     bool l_LFFlg = false;
@@ -90,13 +99,16 @@ void UART_SetReceiveData(void) {
     // falseならそのまま
 
     // CRフラグ 検知前
-    if (CRFlg == false) {
-        if (i_data == '\r') {
+    if (CRFlg == false)
+    {
+        if (i_data == '\r')
+        {
             // 次にLFが来てもスルーする用にCRフラグを立てる
             CRFlg = true;
         }
 
-        if ((CRFlg == true) || (i_data == '\n')) {
+        if ((CRFlg == true) || (i_data == '\n'))
+        {
             // 現在の位置にCRを追加
             // receiveCount
             // バッファの最後
@@ -120,19 +132,24 @@ void UART_SetReceiveData(void) {
 
             l_receiveEnterFlg = true;
         }
-
-    } else {  // CRフラグ 検知後 CRの次のバイト
+    }
+    else
+    { // CRフラグ 検知後 CRの次のバイト
 
         // CRの次にLFが来た場合
-        if (i_data == '\n') {
+        if (i_data == '\n')
+        {
             // 今回の割込みは全スルーする
             // CRフラグを下げる
 
             PrintUART((uint8_t *)"2文字目のLFはスルーしたよ！\r\n");
             UART_ReceiveCharLast = '\r';
-            l_LFFlg              = true;
-        } else {
-            if (i_data == '\r') {
+            l_LFFlg = true;
+        }
+        else
+        {
+            if (i_data == '\r')
+            {
                 UART_ReceiveData1[UART_ReceiveCount] = '\r';
 
                 // UART_ReceiveCount = 62
@@ -147,9 +164,11 @@ void UART_SetReceiveData(void) {
 
 #endif
 
-    if (l_LFFlg == false) {
+    if (l_LFFlg == false)
+    {
         // 入力が改行ではない場合
-        if (l_receiveEnterFlg == false) {
+        if (l_receiveEnterFlg == false)
+        {
             // 受信したデータを格納
             UART_ReceiveData1[UART_ReceiveCount] = i_data;
         }
@@ -167,7 +186,8 @@ void UART_SetReceiveData(void) {
         // buf[61] = '\r'
 
         // 62 になったら、バッファを最初からにする。
-        if (UART_ReceiveCount >= UART_RECEIVE_BUF - 2) {
+        if (UART_ReceiveCount >= UART_RECEIVE_BUF - 2)
+        {
             // バッファオーバーフラグを立てる
             l_receiveCountOverFlowFlg = true;
 
@@ -182,7 +202,8 @@ void UART_SetReceiveData(void) {
         }
 
         // バッファの最初に戻ったかどうか
-        if (l_receiveEnterFlg || l_receiveCountOverFlowFlg) {
+        if (l_receiveEnterFlg || l_receiveCountOverFlowFlg)
+        {
             // バッファの終わりフラグを立てる
             UART_ReceiveBufEndFlg = true;
             // 1行受信フラグ ON
@@ -191,7 +212,8 @@ void UART_SetReceiveData(void) {
 
         // エンターでバッファが最初からに戻る処理
         //状態もEnterが押された状態へ遷移する
-        if (l_receiveEnterFlg == true) {
+        if (l_receiveEnterFlg == true)
+        {
             UART_State = UART_STATE_PUSHED_ENTER;
             // UART_ReceiveData1[UART_ReceiveCount] = '\0';
             UART_ReceiveCount = 0;
@@ -201,119 +223,108 @@ void UART_SetReceiveData(void) {
     }
 }
 
-// 割込みの再設定
-// mainの受信割込みで呼ばれる
-void UART_ReloadReceiveInterrupt(void) {
-    HAL_UART_Receive_IT(this_huart, &UART_ReceiveCharLast, 1);
-}
-
 // 新入力処理
-uint8_t UART_ReceiveInput(uint8_t i_sysState) {
+void UART_receiveInput(uint8_t i_sysState)
+{
     bool l_do_flg = false;
 
 #ifdef MYDEBUG_UART_RECEIVEINPUT
     uint8_t l_buf[UART_RECEIVE_BUF];
 #endif
 
-    switch (i_sysState) {
-        // システム状態がUARTを使用する場合のみ実行フラグを立てる
-        case SYS_STATE_DEBUG_RECIEVE:
-        case SYS_STATE_BLE:
-        case SYS_STATE_BLE_CENTRAL:
-            l_do_flg = true;
-            break;
-
-        default:
-            // 何もしない
-            break;
-    }
-
-    if (l_do_flg == true) {
-        // とりあえず、Enter押したら、1行が表示されるようにする
-        // 前提：メインでずっと処理される
-
-        if (UART_ReceiveFlg == true) {
-            if (UART_State == UART_STATE_NONPUSHED) {
-                // 入力を表示
-                PrintChar(UART_GetReceiveCharLast());
-
-            } else if (UART_State == UART_STATE_PUSHED_ENTER) {  // エンターが押された時の処理
-                // Enterを押したら、改行させる
-                PrintUART((uint8_t *)"\r\n");
+    if (UART_ReceiveFlg == true)
+    {
+        if (UART_State == UART_STATE_NONPUSHED)
+        {
+            // 入力を表示
+            PrintChar(UART_GetReceiveCharLast());
+        }
+        else if (UART_State == UART_STATE_PUSHED_ENTER)
+        { // エンターが押された時の処理
+            // Enterを押したら、改行させる
+            PrintUART((uint8_t *)"\r\n");
 
 // #define MYDEBUG_UART_RECEIVEINPUT
 #ifdef MYDEBUG_UART_RECEIVEINPUT
-                UART_GetReceiveData(&l_buf, UART_RECEIVE_BUF);
-                PrintUART((uint8_t *)"DEBUG:UART_ReceiveInput() : ");
-                PrintUART(l_buf);
+            UART_GetReceiveData(&l_buf, UART_RECEIVE_BUF);
+            PrintUART((uint8_t *)"DEBUG:UART_receiveInput() : ");
+            PrintUART(l_buf);
 #endif
 
-                UART_enterHundler(i_sysState);
-                LINBLE_EnterHandler(i_sysState);
+            UART_enterHundler(i_sysState);
+            LINBLE_EnterHandler(i_sysState);
 
-                UART_State = UART_STATE_NONPUSHED;
-            }
-
-            UART_ReceiveFlg = false;
+            UART_State = UART_STATE_NONPUSHED;
         }
-    }
 
-    return l_do_flg;
-}
-
-void UART_enterHundler(uint8_t i_sysState) {
-    switch (i_sysState) {
-        case SYS_STATE_DEBUG_RECIEVE:
-            UART_RunMemDump();
-            break;
-        default:
-            // 何もしない
-            break;
+        UART_ReceiveFlg = false;
     }
 }
 
-uint8_t UART_GetState(void) {
+void UART_enterHundler(uint8_t i_sysState)
+{
+    switch (i_sysState)
+    {
+    case SYS_STATE_DEBUG_RECIEVE:
+        UART_RunMemDump();
+        break;
+    default:
+        // 何もしない
+        break;
+    }
+}
+
+uint8_t UART_GetState(void)
+{
     return UART_State;
 }
 
-uint8_t UART_GetReceiveLineFlg(void) {
+uint8_t UART_GetReceiveLineFlg(void)
+{
     return UART_ReceiveLineFlg;
 }
 
-void UART_ClrReceiveLineFlg(void) {
+void UART_ClrReceiveLineFlg(void)
+{
     UART_ReceiveLineFlg = false;
 }
 
 // -----------------------------------------
 
 // 初期化
-void UART_Console_Init(UART_HandleTypeDef *huart) {
+void UART_Console_Init(UART_HandleTypeDef *huart)
+{
     this_huart = huart;
 
     HAL_UART_Receive_IT(this_huart, &UART_ReceiveCharLast, 1);
 }
 
 // 最後に入力された文字を返す
-uint8_t UART_GetReceiveCharLast(void) {
+uint8_t UART_GetReceiveCharLast(void)
+{
     return UART_ReceiveCharLast;
 }
 
 // バッファに入っているデータを取得する
-uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
-    uint8_t i            = 0;
+uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize)
+{
+    uint8_t i = 0;
     uint8_t l_CRLFEOFNum = 0;
 
     // バッファサイズより大きい場合の例外
-    if (UART_ReceiveCountLast > i_bufSize) {
+    if (UART_ReceiveCountLast > i_bufSize)
+    {
         PrintUART((uint8_t *)"error uart getreceivedata \r\n");
         return 0;
     }
 
-    while (i <= UART_ReceiveCountLast && i < i_bufSize) {
+    while (i <= UART_ReceiveCountLast && i < i_bufSize)
+    {
         *o_strAddr = UART_ReceiveData1[i];
         // 改行、終端文字の場合は、カウントしない
         // if (*o_strAddr == '\r' || *o_strAddr == '\n' || *o_strAddr == '\0') {
-        if (*o_strAddr == '\0') {
+        if (*o_strAddr == '\0')
+        {
             l_CRLFEOFNum++;
         }
 
@@ -329,7 +340,8 @@ uint8_t UART_GetReceiveData(uint8_t *o_strAddr, uint8_t i_bufSize) {
 
 // エンターが押された時の処理
 // メモリダンプ処理
-void UART_RunMemDump(void) {
+void UART_RunMemDump(void)
+{
     // 文字列バッファ
     uint8_t l_strBuf[64];
     // 文字列の長さ
@@ -343,15 +355,19 @@ void UART_RunMemDump(void) {
     // 引数1つ目と2つ目の値を格納する配列
     static uint32_t ls_FuncArgumentArray[2] = {0, 0};
 
-    l_strLength = UART_GetReceiveData((uint8_t * )&l_strBuf, 64);
+    l_strLength = UART_GetReceiveData((uint8_t *)&l_strBuf, 64);
     PrintUARTInt(l_strLength);
 
-    if (l_strLength == 1) {
-        if (l_strBuf[0] == '\0') {
+    if (l_strLength == 1)
+    {
+        if (l_strBuf[0] == '\r' || l_strBuf[0] == '\n')
+        {
             // enterの文字と、受信した文字列を表示
             PrintUART((uint8_t *)"enter\r\n");
         }
-    } else {
+    }
+    else
+    {
         PrintUART((uint8_t *)"Input : ");
         PrintUARTn(l_strBuf, 64);
         PrintUART((uint8_t *)"\r\n");
@@ -359,11 +375,14 @@ void UART_RunMemDump(void) {
 
     // 入力された文字がコマンド(アドレス)かどうか
     // 文字数チェック
-    if (l_strLength > 9) {
+    if (l_strLength > 9)
+    {
         PrintERROR(ERROR_INPUT_OVERLENGTH);
 
         goto INPUT_ERROR;
-    } else if (l_strLength == 1) {
+    }
+    else if (l_strLength == 1)
+    {
         // もし1文字目でエンターを押した場合
         // 改行を表示するだけ
         PrintERROR(ERROR_INPUT_SHORTLENGTH);
@@ -373,30 +392,40 @@ void UART_RunMemDump(void) {
 
     // 文字列を16進数に変換
     l_status = MyString_Atoi(&l_value, l_strBuf, l_strLength);
-    dprintUART((uint8_t *)"MyString_Atoi : ", l_value);
+    PrintUART((uint8_t *)"MyString_Atoi : ");
+    PrintUARTInt(l_value);
 
     // 1要素目（開始アドレスの指定）
-    if (ls_EnterNum == 0) {
-        if (l_status == -1) {
+    if (ls_EnterNum == 0)
+    {
+        if (l_status == -1)
+        {
             goto INPUT_ERROR;
-        } else {
+        }
+        else
+        {
             ls_FuncArgumentArray[0] = l_value;
         }
 
         ls_EnterNum = 1;
         // 2要素目（読み取るサイズ）
-    } else if (ls_EnterNum == 1) {
-        if (l_status == -1) {
+    }
+    else if (ls_EnterNum == 1)
+    {
+        if (l_status == -1)
+        {
             goto INPUT_ERROR;
-        } else {
+        }
+        else
+        {
             ls_FuncArgumentArray[1] = l_value;
         }
 
         Dump_sendMemDumpUART((uint8_t *)ls_FuncArgumentArray[0],
-            ls_FuncArgumentArray[1]);
+                             ls_FuncArgumentArray[1]);
 
     INPUT_ERROR:
-        ls_EnterNum             = 0;
+        ls_EnterNum = 0;
         ls_FuncArgumentArray[0] = 0;
         ls_FuncArgumentArray[1] = 0;
     }
@@ -409,7 +438,8 @@ void UART_RunMemDump(void) {
 //		文字数
 //　終端
 #define BUF_STR_SIZE 128
-int8_t PrintUART(uint8_t *i_str) {
+int8_t PrintUART(uint8_t *i_str)
+{
     uint8_t l_strLength = 0;
     /* ----------------------- エラー処理 -------------------*/
     // 文字数、終端文字
@@ -417,19 +447,26 @@ int8_t PrintUART(uint8_t *i_str) {
 
     // 終端文字か改行文字を見つけるまで かつ バッファ分まで
     l_strLength = MyString_FindEOL(i_str, BUF_STR_SIZE);
-    if (l_strLength < 0) {
+    if (l_strLength < 0)
+    {
         l_strLength = MyString_FindLF(i_str, BUF_STR_SIZE);
-        if (l_strLength < 0) {
+        if (l_strLength < 0)
+        {
             l_strLength = MyString_FindCR(i_str, BUF_STR_SIZE);
-            if (l_strLength < 0) {
+            if (l_strLength < 0)
+            {
                 PrintERROR(ERROR_UART_PRINTUART_ENDOFLINE);
                 return -1;
             }
-        } else if (l_strLength == 0) {
+        }
+        else if (l_strLength == 0)
+        {
             PrintUART((uint8_t *)"LFが1文字目です。\r\n");
             // return -1;
         }
-    } else if (l_strLength == 0) {
+    }
+    else if (l_strLength == 0)
+    {
         PrintUART((uint8_t *)"終端文字が1文字目です。\r\n");
         // return -1;
     }
@@ -451,11 +488,13 @@ int8_t PrintUART(uint8_t *i_str) {
     // return 0;
 }
 
-int8_t PrintUARTn(uint8_t *i_str, uint8_t i_size) {
+int8_t PrintUARTn(uint8_t *i_str, uint8_t i_size)
+{
     uint8_t l_strBuf[i_size + 1];
     uint8_t i = 0;
 
-    while (i < i_size) {
+    while (i < i_size)
+    {
         l_strBuf[i] = *i_str;
         i_str++;
         i++;
@@ -467,38 +506,48 @@ int8_t PrintUARTn(uint8_t *i_str, uint8_t i_size) {
     /* ---------------------------------------------------- */
 
     // 終端文字を見つけるまで かつ バッファ分まで
-    if (MyString_FindEOL((uint8_t*)&l_strBuf, i_size + 1) <= 0) {
+    if (MyString_FindEOL((uint8_t *)&l_strBuf, i_size + 1) <= 0)
+    {
         l_strBuf[i_size] = '\0';
     }
 
     /* -------------------------------------*/
 
-    int status = HAL_UART_Transmit(this_huart, (uint8_t*)&l_strBuf, (uint16_t)(strlen((const char *)&l_strBuf)), 0xffff);
+    int status = HAL_UART_Transmit(this_huart, (uint8_t *)&l_strBuf, (uint16_t)(strlen((const char *)&l_strBuf)), 0xffff);
     return status == HAL_OK;
 }
 
-uint8_t PrintChar(uint8_t i_char) {
+uint8_t PrintChar(uint8_t i_char)
+{
     int status = HAL_ERROR;
     uint8_t l_buf[2];
 
     l_buf[0] = i_char;
     l_buf[1] = 0;
 
-    if (MyString_CheckCharCtrlCode(i_char) == true) {
+    if (MyString_CheckCharCtrlCode(i_char) == true)
+    {
         status = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
-    } else if (i_char == '\r' || i_char == '\n') {
+    }
+    else if (i_char == '\r' || i_char == '\n')
+    {
         status = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
-    } else if (i_char == '\0') {
+    }
+    else if (i_char == '\0')
+    {
         status = HAL_OK;
-    } else {
+    }
+    else
+    {
         l_buf[0] = '.';
-        status   = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
+        status = HAL_UART_Transmit(this_huart, (uint8_t *)l_buf, (uint16_t)2, 0xffff);
     }
     return status == HAL_OK;
 }
 
 // 数値のみを表示
-int8_t PrintUARTInt(uint32_t i_var) {
+int8_t PrintUARTInt(uint32_t i_var)
+{
     uint8_t l_buffer[64];
     sprintf((char *)&l_buffer, "%ld\r\n", i_var);
 
@@ -506,31 +555,26 @@ int8_t PrintUARTInt(uint32_t i_var) {
     return status == HAL_OK;
 }
 
-// デバッグ用
-bool dprintUART(uint8_t *i_str, uint32_t i_var) {
-    uint8_t l_buffer[64];
-    uint8_t l_buffer2[64];
-
-    sprintf((char *)&l_buffer, "%s%ld", i_str, i_var);
-
-    sprintf((char *)&l_buffer2, "%s, buf size : %d\r\n", (char *)&l_buffer, strlen((const char *)&l_buffer));
-
-    int status = HAL_UART_Transmit(this_huart, l_buffer2, (uint16_t)(strlen((const char *)&l_buffer2)), 0xffff);
-    return status == HAL_OK;
-}
-
 // 16進で表示
 // i_len は桁数
-bool printUARTHex(uint8_t *i_str, uint32_t i_var, uint8_t i_len) {
+bool printUARTHex(uint8_t *i_str, uint32_t i_var, uint8_t i_len)
+{
     uint8_t l_buffer[64];
 
-    if (i_len == 4) {
+    if (i_len == 4)
+    {
         sprintf((char *)&l_buffer, "%s0x%04x\r\n", i_str, (unsigned int)i_var);
-    } else if (i_len == 8) {
+    }
+    else if (i_len == 8)
+    {
         sprintf((char *)&l_buffer, "%s0x%08x\r\n", i_str, (unsigned int)i_var);
-    } else if (i_len == 2) {
+    }
+    else if (i_len == 2)
+    {
         sprintf((char *)&l_buffer, "%s0x%02x\r\n", i_str, (unsigned int)i_var);
-    } else {
+    }
+    else
+    {
         sprintf((char *)&l_buffer, "%s0x%x\r\n", i_str, (unsigned int)i_var);
     }
 
@@ -538,44 +582,46 @@ bool printUARTHex(uint8_t *i_str, uint32_t i_var, uint8_t i_len) {
     return status == HAL_OK;
 }
 
-void PrintERROR(uint8_t i_errorCode) {
-    switch (i_errorCode) {
-        case ERROR_INPUT_OVERLENGTH:
-            PrintUART((uint8_t *)"ERROR INPUT OVERLENGTH\r\n");
-            break;
-        case ERROR_INPUT_SHORTLENGTH:
-            PrintUART((uint8_t *)"ERROR_INPUT_SHORTLENGTH\r\n");
-            break;
-        case ERROR_INPUT_CONTROL_CODE:
-            PrintUART((uint8_t *)"ERROR_INPUT_CONTROL_CODE\r\n");
-            break;
-        case ERROR_INPUT_ALPHANUMERIC:
-            PrintUART((uint8_t *)"ERROR_INPUT_ALPHANUMERIC\r\n");
-            break;
-        case ERROR_INPUT_HEX:
-            PrintUART((uint8_t *)"ERROR_INPUT_HEX\r\n");
-            break;
-        case ERROR_UART_PRINTUART_ENDOFLINE:
-            PrintUART((uint8_t *)"ERROR_UART_PRINTUART_ENDOFLINE\r\n");
-            break;
-        case ERROR_LINBLE_SENDFAILURE:
-            PrintUART((uint8_t *)"ERROR_LINBLE_SENDFAILURE\r\n");
-            break;
-        case ERROR_LINBLE_NOTFIND_ENDOFLINE:
-            PrintUART((uint8_t *)"ERROR_LINBLE_NOTFIND_ENDOFLINE\r\n");
-            break;
-        case ERROR_LINBLE_NOTFIND_CR:
-            PrintUART((uint8_t *)"ERROR_LINBLE_NOTFIND_CR\r\n");
-            break;
-        case ERROR_MYSTRINGFUNC_NOTFIND_ENDOFLINE:
-            PrintUART((uint8_t *)"ERROR_MYSTRINGFUNC_NOTFIND_ENDOFLINE\r\n");
-            break;
-        case ERROR_LINBLE_RECIEVEFAILURE:
-            PrintUART((uint8_t *)"ERROR_LINBLE_RECIEVEFAILURE\r\n");
-            break;
+void PrintERROR(uint8_t i_errorCode)
+{
+    switch (i_errorCode)
+    {
+    case ERROR_INPUT_OVERLENGTH:
+        PrintUART((uint8_t *)"ERROR INPUT OVERLENGTH\r\n");
+        break;
+    case ERROR_INPUT_SHORTLENGTH:
+        PrintUART((uint8_t *)"ERROR_INPUT_SHORTLENGTH\r\n");
+        break;
+    case ERROR_INPUT_CONTROL_CODE:
+        PrintUART((uint8_t *)"ERROR_INPUT_CONTROL_CODE\r\n");
+        break;
+    case ERROR_INPUT_ALPHANUMERIC:
+        PrintUART((uint8_t *)"ERROR_INPUT_ALPHANUMERIC\r\n");
+        break;
+    case ERROR_INPUT_HEX:
+        PrintUART((uint8_t *)"ERROR_INPUT_HEX\r\n");
+        break;
+    case ERROR_UART_PRINTUART_ENDOFLINE:
+        PrintUART((uint8_t *)"ERROR_UART_PRINTUART_ENDOFLINE\r\n");
+        break;
+    case ERROR_LINBLE_SENDFAILURE:
+        PrintUART((uint8_t *)"ERROR_LINBLE_SENDFAILURE\r\n");
+        break;
+    case ERROR_LINBLE_NOTFIND_ENDOFLINE:
+        PrintUART((uint8_t *)"ERROR_LINBLE_NOTFIND_ENDOFLINE\r\n");
+        break;
+    case ERROR_LINBLE_NOTFIND_CR:
+        PrintUART((uint8_t *)"ERROR_LINBLE_NOTFIND_CR\r\n");
+        break;
+    case ERROR_MYSTRINGFUNC_NOTFIND_ENDOFLINE:
+        PrintUART((uint8_t *)"ERROR_MYSTRINGFUNC_NOTFIND_ENDOFLINE\r\n");
+        break;
+    case ERROR_LINBLE_RECIEVEFAILURE:
+        PrintUART((uint8_t *)"ERROR_LINBLE_RECIEVEFAILURE\r\n");
+        break;
 
-        default:
-            PrintUART((uint8_t *)"Unregistered error\r\n");
-            break;
+    default:
+        PrintUART((uint8_t *)"Unregistered error\r\n");
+        break;
     }
 }
