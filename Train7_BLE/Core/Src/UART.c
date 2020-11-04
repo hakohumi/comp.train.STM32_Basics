@@ -37,7 +37,6 @@ UARTは1つのマイコンに1つ以上存在するため、ある程度共通�
 #define INPUT_BUF_SIZE 64
 
 void UART_enterHundler(uint8_t i_sysState);
-void UART_receiveInput(uint8_t i_sysState);
 
 // バッファ
 static uint8_t UART_ReceiveData1[UART_RECEIVE_BUF];
@@ -220,7 +219,7 @@ void UART_ReloadReceiveInterrupt(void) {
 }
 
 // 新入力処理
-void UART_receiveInput(uint8_t i_sysState) {
+void UART_ReceiveInput(uint8_t i_sysState) {
 #ifdef MYDEBUG_UART_RECEIVEINPUT
     uint8_t l_buf[UART_RECEIVE_BUF];
 #endif
@@ -241,7 +240,7 @@ void UART_receiveInput(uint8_t i_sysState) {
 // #define MYDEBUG_UART_RECEIVEINPUT
 #ifdef MYDEBUG_UART_RECEIVEINPUT
             UART_GetReceiveData(&l_buf, UART_RECEIVE_BUF);
-            PrintUART((uint8_t *)"DEBUG:UART_receiveInput() : ");
+            PrintUART((uint8_t *)"DEBUG:UART_ReceiveInput() : ");
             PrintUART(l_buf);
 #endif
 

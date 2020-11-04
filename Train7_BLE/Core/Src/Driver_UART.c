@@ -1,5 +1,5 @@
 
-#include "main.h"
+//#include "main.h"
 
 /*
 
@@ -63,3 +63,5 @@ bool IsEmptyBuff(uart)
 
 // 指定したUARTにデータを送る
 int8_t DriverUART_sendDATA(UART_HandleTypeDef *i_huartPtr, uint8_t *i_str);
+
+*/

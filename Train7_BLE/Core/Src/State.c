@@ -83,7 +83,7 @@ void State_RunRealtimeProcess(void) {
 
     switch (l_SysState) {
         case SYS_STATE_DEBUG_RECIEVE:
-            UART_receiveInput(SystemState);
+            UART_ReceiveInput(SystemState);
             break;
         case SYS_STATE_BLE:
             // 状態に入って1回だけ実行する処理
@@ -96,9 +96,13 @@ void State_RunRealtimeProcess(void) {
                 PrintUART((
                     uint8_t *)"\"3\" : Print LINBLE Bluetooth device address.\r\n");
                 PrintUART((uint8_t *)"\"4\" : Print LNBLE State.\r\n");
+
+                // 変数の初期化
+                LINBLE_SetState(LINBLE_STATE_COMMAND);
+                LINBLE_ClrReceiveResultMesgWaitFlg();
             }
 
-            UART_receiveInput(SystemState);
+            UART_ReceiveInput(SystemState);
             State_runRealtimeBLEInput();
             break;
 
@@ -114,9 +118,13 @@ void State_RunRealtimeProcess(void) {
                     uint8_t *)"\"3\" : Print LINBLE Bluetooth device address.\r\n");
                 PrintUART((uint8_t *)"\"4\" : Print LNBLE State.\r\n");
                 PrintUART((uint8_t *)"\"5\" : Connect to Peripheral LINBLE.\r\n");
+
+                // 変数の初期化
+                LINBLE_SetState(LINBLE_STATE_COMMAND);
+                LINBLE_ClrReceiveResultMesgWaitFlg();
             }
 
-            UART_receiveInput(SystemState);
+            UART_ReceiveInput(SystemState);
             State_runRealtimeBLECentralInput();
             break;
         default:
