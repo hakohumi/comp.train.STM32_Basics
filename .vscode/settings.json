@@ -1,5 +1,6 @@
 {
     "files.associations": {
         "state.h": "c"
-    }
+    },
+    "C_Cpp.clang_format_style": "{BasedOnStyle: Google, IndentWidth: 4, BreakBeforeBraces: Attach, AlwaysBreakBeforeMultilineStrings: true, DerivePointerAlignment: false, PointerAlignment: Right, AlignAfterOpenBracket: false, BinPackParameters: false, BinPackArguments: false, AlignConsecutiveAssignments: true, AlignTrailingComments: true, AllowShortBlocksOnASingleLine: false, AllowShortCaseLabelsOnASingleLine: false, AllowShortFunctionsOnASingleLine: Empty, AllowShortIfStatementsOnASingleLine: false, AllowShortLoopsOnASingleLine: false, AlwaysBreakAfterReturnType: None, AlwaysBreakAfterDefinitionReturnType: false, ColumnLimit: 0}",
 }
