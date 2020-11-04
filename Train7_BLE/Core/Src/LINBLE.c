@@ -14,7 +14,6 @@
 #include "mystringfunc.h"
 #include "string.h"
 
-#define BUF_STR_SIZE 64
 #define LINBLE_RECEIVE_BUF 64
 
 static UART_HandleTypeDef *this_huart;

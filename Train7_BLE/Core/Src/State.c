@@ -346,7 +346,7 @@ void State_runRealtimeBLEInput(void) {
             // if ((LINBLE_GetReceiveResultMesgWaitFlg() && LINBLE_GetEndLineFlg())
             // == true) {
             if (LINBLE_GetEndLineFlg() == true) {
-                l_strLength = LINBLE_GetReceiveData((uint8_t *)&l_strBuf, 64);
+                l_strLength = LINBLE_GetReceiveDataLast((uint8_t *)&l_strBuf, 64);
 
                 if (l_strLength > 0) {
                     // 受信したコマンドの表示
@@ -364,16 +364,16 @@ void State_runRealtimeBLEInput(void) {
                     } else {
                     }
 
-                    // エンドラインフラグをクリア
-                    LINBLE_ClrEndLineFlg();
-                    // バッファカウンタのクリア
-                    LINBLE_BufferCountClear();
-
                 } else {
                     PrintUART((uint8_t *)
                             "error linble run realtime ble input "
                             "state command \r\n");
                 }
+
+                // エンドラインフラグをクリア
+                LINBLE_ClrEndLineFlg();
+                // バッファカウンタのクリア
+                LINBLE_BufferCountClear();
             }
 
             break;
